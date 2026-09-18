@@ -1,0 +1,126 @@
+# Local development overrides; keep upstream configuration intact.
+volumes:
+  apps-browser-extension-modules:
+  apps-cli-modules:
+  apps-landing-modules:
+  apps-mcp-modules:
+  apps-mobile-modules:
+  apps-web-modules:
+  apps-workers-modules:
+  packages-api-modules:
+  packages-benchmarks-modules:
+  packages-db-modules:
+  packages-e2e_tests-modules:
+  packages-open-api-modules:
+  packages-plugins-modules:
+  packages-sdk-modules:
+  packages-shared-modules:
+  packages-shared-react-modules:
+  packages-shared-server-modules:
+  packages-trpc-modules:
+  tooling-github-modules:
+  tooling-oxlint-modules:
+  tooling-prettier-modules:
+  tooling-tailwind-modules:
+  tooling-typescript-modules:
+  tools-compare-models-modules:
+  tools-seed-snapshot-modules:
+  docs-modules:
+services:
+  web:
+    volumes:
+      - apps-browser-extension-modules:/app/apps/browser-extension/node_modules
+      - apps-cli-modules:/app/apps/cli/node_modules
+      - apps-landing-modules:/app/apps/landing/node_modules
+      - apps-mcp-modules:/app/apps/mcp/node_modules
+      - apps-mobile-modules:/app/apps/mobile/node_modules
+      - apps-web-modules:/app/apps/web/node_modules
+      - apps-workers-modules:/app/apps/workers/node_modules
+      - packages-api-modules:/app/packages/api/node_modules
+      - packages-benchmarks-modules:/app/packages/benchmarks/node_modules
+      - packages-db-modules:/app/packages/db/node_modules
+      - packages-e2e_tests-modules:/app/packages/e2e_tests/node_modules
+      - packages-open-api-modules:/app/packages/open-api/node_modules
+      - packages-plugins-modules:/app/packages/plugins/node_modules
+      - packages-sdk-modules:/app/packages/sdk/node_modules
+      - packages-shared-modules:/app/packages/shared/node_modules
+      - packages-shared-react-modules:/app/packages/shared-react/node_modules
+      - packages-shared-server-modules:/app/packages/shared-server/node_modules
+      - packages-trpc-modules:/app/packages/trpc/node_modules
+      - tooling-github-modules:/app/tooling/github/node_modules
+      - tooling-oxlint-modules:/app/tooling/oxlint/node_modules
+      - tooling-prettier-modules:/app/tooling/prettier/node_modules
+      - tooling-tailwind-modules:/app/tooling/tailwind/node_modules
+      - tooling-typescript-modules:/app/tooling/typescript/node_modules
+      - tools-compare-models-modules:/app/tools/compare-models/node_modules
+      - tools-seed-snapshot-modules:/app/tools/seed-snapshot/node_modules
+      - docs-modules:/app/docs/node_modules
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    ports: !override
+      - "127.0.0.1:3000:3000"
+  workers:
+    volumes:
+      - apps-browser-extension-modules:/app/apps/browser-extension/node_modules
+      - apps-cli-modules:/app/apps/cli/node_modules
+      - apps-landing-modules:/app/apps/landing/node_modules
+      - apps-mcp-modules:/app/apps/mcp/node_modules
+      - apps-mobile-modules:/app/apps/mobile/node_modules
+      - apps-web-modules:/app/apps/web/node_modules
+      - apps-workers-modules:/app/apps/workers/node_modules
+      - packages-api-modules:/app/packages/api/node_modules
+      - packages-benchmarks-modules:/app/packages/benchmarks/node_modules
+      - packages-db-modules:/app/packages/db/node_modules
+      - packages-e2e_tests-modules:/app/packages/e2e_tests/node_modules
+      - packages-open-api-modules:/app/packages/open-api/node_modules
+      - packages-plugins-modules:/app/packages/plugins/node_modules
+      - packages-sdk-modules:/app/packages/sdk/node_modules
+      - packages-shared-modules:/app/packages/shared/node_modules
+      - packages-shared-react-modules:/app/packages/shared-react/node_modules
+      - packages-shared-server-modules:/app/packages/shared-server/node_modules
+      - packages-trpc-modules:/app/packages/trpc/node_modules
+      - tooling-github-modules:/app/tooling/github/node_modules
+      - tooling-oxlint-modules:/app/tooling/oxlint/node_modules
+      - tooling-prettier-modules:/app/tooling/prettier/node_modules
+      - tooling-tailwind-modules:/app/tooling/tailwind/node_modules
+      - tooling-typescript-modules:/app/tooling/typescript/node_modules
+      - tools-compare-models-modules:/app/tools/compare-models/node_modules
+      - tools-seed-snapshot-modules:/app/tools/seed-snapshot/node_modules
+      - docs-modules:/app/docs/node_modules
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+  prep:
+    environment:
+      CI: "true"
+    volumes:
+      - apps-browser-extension-modules:/app/apps/browser-extension/node_modules
+      - apps-cli-modules:/app/apps/cli/node_modules
+      - apps-landing-modules:/app/apps/landing/node_modules
+      - apps-mcp-modules:/app/apps/mcp/node_modules
+      - apps-mobile-modules:/app/apps/mobile/node_modules
+      - apps-web-modules:/app/apps/web/node_modules
+      - apps-workers-modules:/app/apps/workers/node_modules
+      - packages-api-modules:/app/packages/api/node_modules
+      - packages-benchmarks-modules:/app/packages/benchmarks/node_modules
+      - packages-db-modules:/app/packages/db/node_modules
+      - packages-e2e_tests-modules:/app/packages/e2e_tests/node_modules
+      - packages-open-api-modules:/app/packages/open-api/node_modules
+      - packages-plugins-modules:/app/packages/plugins/node_modules
+      - packages-sdk-modules:/app/packages/sdk/node_modules
+      - packages-shared-modules:/app/packages/shared/node_modules
+      - packages-shared-react-modules:/app/packages/shared-react/node_modules
+      - packages-shared-server-modules:/app/packages/shared-server/node_modules
+      - packages-trpc-modules:/app/packages/trpc/node_modules
+      - tooling-github-modules:/app/tooling/github/node_modules
+      - tooling-oxlint-modules:/app/tooling/oxlint/node_modules
+      - tooling-prettier-modules:/app/tooling/prettier/node_modules
+      - tooling-tailwind-modules:/app/tooling/tailwind/node_modules
+      - tooling-typescript-modules:/app/tooling/typescript/node_modules
+      - tools-compare-models-modules:/app/tools/compare-models/node_modules
+      - tools-seed-snapshot-modules:/app/tools/seed-snapshot/node_modules
+      - docs-modules:/app/docs/node_modules
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev

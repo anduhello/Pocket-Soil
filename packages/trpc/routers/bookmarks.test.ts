@@ -806,12 +806,64 @@ describe("Bookmark Routes", () => {
     expect(bookmark3User1.alreadyExists).toEqual(false);
   });
 
-  test<CustomTestContext>("re-saving a link restores and refreshes the existing bookmark", async ({
+  test<CustomTestContext>("import preview only reveals the current user's existing links", async ({
+    apiCallers,
+    unauthedAPICaller,
+  }) => {
+    await apiCallers[0].bookmarks.createBookmark({
+      type: BookmarkTypes.LINK,
+      url: "https://example.com/private",
+    });
+    expect(
+      await apiCallers[0].bookmarks.previewExistingLinks({
+        urls: ["https://example.com/private"],
+      }),
+    ).toEqual({ urls: ["https://example.com/private"] });
+    expect(
+      await apiCallers[1].bookmarks.previewExistingLinks({
+        urls: ["https://example.com/private"],
+      }),
+    ).toEqual({ urls: [] });
+    await expect(
+      unauthedAPICaller.bookmarks.previewExistingLinks({ urls: [] }),
+    ).rejects.toThrow();
+  });
+
+  test<CustomTestContext>("concurrent creation saves one link per user and enqueues only new links", async ({
+    apiCallers,
+    db,
+  }) => {
+    const queues = getTestQueueMocks();
+    queues.linkCrawlerEnqueue.mockClear();
+    queues.lowPriorityCrawlerEnqueue.mockClear();
+    const requests = Array.from({ length: 8 }, (_, index) =>
+      apiCallers[index % 2].bookmarks.createBookmark({
+        type: BookmarkTypes.LINK,
+        url: "https://example.com/concurrent",
+        source: "import",
+      }),
+    );
+    const results = await Promise.all(requests);
+    expect(
+      new Set(results.filter((_, i) => i % 2 === 0).map((b) => b.id)).size,
+    ).toBe(1);
+    expect(
+      new Set(results.filter((_, i) => i % 2 === 1).map((b) => b.id)).size,
+    ).toBe(1);
+    expect(results[0].id).not.toBe(results[1].id);
+    expect(results.filter((b) => !b.alreadyExists)).toHaveLength(2);
+    expect(await db.select().from(bookmarkLinks)).toHaveLength(2);
+    expect(
+      queues.linkCrawlerEnqueue.mock.calls.length +
+        queues.lowPriorityCrawlerEnqueue.mock.calls.length,
+    ).toBe(2);
+  });
+
+  test<CustomTestContext>("duplicate link preserves archive state and timestamps without side effects", async ({
     apiCallers,
     db,
   }) => {
     const api = apiCallers[0].bookmarks;
-    const user = await apiCallers[0].users.whoami();
     const triggerSearchReindexMock = getTestQueueMocks().triggerSearchReindex;
     const triggerWebhookSpy = vi
       .spyOn(WebhooksService.prototype, "triggerWebhook")
@@ -852,9 +904,9 @@ describe("Bookmark Routes", () => {
       expect(duplicate).toMatchObject({
         id: original.id,
         alreadyExists: true,
-        archived: false,
-        createdAt: resavedAt,
-        modifiedAt: resavedAt,
+        archived: true,
+        createdAt: originallySavedAt,
+        modifiedAt: originallySavedAt,
       });
 
       const [afterResave] = await db
@@ -869,29 +921,20 @@ describe("Bookmark Routes", () => {
       assert(afterResave);
 
       expect(afterResave).toMatchObject({
-        archived: false,
-        createdAt: resavedAt,
-        modifiedAt: resavedAt,
+        archived: true,
+        createdAt: originallySavedAt,
+        modifiedAt: originallySavedAt,
       });
       expect(afterResave.dbCreatedAt).toEqual(beforeResave.dbCreatedAt);
-      expect(triggerSearchReindexMock).toHaveBeenCalledWith(original.id, {
-        groupId: user.id,
-      });
-      expect(triggerWebhookSpy).toHaveBeenCalledWith(
-        original.id,
-        "edited",
-        user.id,
-        {
-          groupId: user.id,
-        },
-      );
+      expect(triggerSearchReindexMock).not.toHaveBeenCalled();
+      expect(triggerWebhookSpy).not.toHaveBeenCalled();
     } finally {
       triggerWebhookSpy.mockRestore();
       vi.useRealTimers();
     }
   });
 
-  test<CustomTestContext>("re-saving a link only overwrites the metadata it was given", async ({
+  test<CustomTestContext>("duplicate link does not overwrite supplied metadata; explicit editing still works", async ({
     apiCallers,
   }) => {
     const api = apiCallers[0].bookmarks;
@@ -925,15 +968,27 @@ describe("Bookmark Routes", () => {
     expect(resaveWithMetadata).toMatchObject({
       id: original.id,
       alreadyExists: true,
-      title: "New title",
+      title: "Original title",
       note: "Original note",
-      favourited: false,
+      favourited: true,
     });
 
     const persisted = await api.getBookmark({ bookmarkId: original.id });
     expect(persisted).toMatchObject({
-      title: "New title",
+      title: "Original title",
       note: "Original note",
+      favourited: true,
+    });
+
+    await api.updateBookmark({
+      bookmarkId: original.id,
+      title: "Explicitly edited title",
+      note: "Explicitly edited note",
+      favourited: false,
+    });
+    expect(await api.getBookmark({ bookmarkId: original.id })).toMatchObject({
+      title: "Explicitly edited title",
+      note: "Explicitly edited note",
       favourited: false,
     });
   });

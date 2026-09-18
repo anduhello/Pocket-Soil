@@ -40,10 +40,7 @@ import { EnqueueOptions } from "@karakeep/shared/queueing";
 import { getRateLimitClient } from "@karakeep/shared/ratelimiting";
 import { FilterQuery, getSearchClient } from "@karakeep/shared/search";
 import { parseSearchQuery } from "@karakeep/shared/searchQueryParser";
-import type {
-  ZBookmarkContent,
-  ZBookmarkSource,
-} from "@karakeep/shared/types/bookmarks";
+import type { ZBookmarkContent } from "@karakeep/shared/types/bookmarks";
 import {
   BookmarkTypes,
   DEFAULT_NUM_BOOKMARKS_PER_PAGE,
@@ -205,14 +202,6 @@ const highBookmarkCreationRateLimitConfig = {
   maxRequests: 30,
 } as const;
 
-// Automated bulk flows rely on the dedup path for idempotency, so hitting an
-// existing bookmark from them must stay a no-op instead of unarchiving it and
-// bumping it to the top of the list.
-const RESAVE_EXEMPT_SOURCES: ReadonlySet<ZBookmarkSource> = new Set([
-  "rss",
-  "import",
-]);
-
 async function shouldUseLowPriorityQueues(
   ctx: AuthedContext,
 ): Promise<boolean> {
@@ -238,6 +227,23 @@ async function shouldUseLowPriorityQueues(
 }
 
 export const bookmarksAppRouter = router({
+  previewExistingLinks: bookmarksProcedure
+    .input(z.object({ urls: z.array(z.string().max(8192)).max(100) }))
+    .output(z.object({ urls: z.array(z.string()) }))
+    .query(async ({ input, ctx }) => {
+      if (input.urls.length === 0) return { urls: [] };
+      const rows = await ctx.db
+        .select({ url: bookmarkLinks.url })
+        .from(bookmarkLinks)
+        .innerJoin(bookmarks, eq(bookmarks.id, bookmarkLinks.id))
+        .where(
+          and(
+            eq(bookmarks.userId, ctx.user.id),
+            inArray(bookmarkLinks.url, input.urls),
+          ),
+        );
+      return { urls: rows.map((row) => row.url) };
+    }),
   createBookmark: bookmarksProcedure
     .use(
       createRateLimitMiddleware({
@@ -272,60 +278,18 @@ export const bookmarksAppRouter = router({
           : {}),
       });
       if (input.type == BookmarkTypes.LINK) {
-        // This doesn't 100% protect from duplicates because of races, but it's more than enough for this usecase.
-        const alreadyExists = await attemptToDedupLink(ctx, input.url);
+        // Fast path; the immediate transaction below repeats this check while
+        // holding SQLite's write reservation to close concurrent create races.
+        const alreadyExists = await attemptToDedupLink(ctx, input.url.trim());
         if (alreadyExists) {
           addLogFields<"bookmark.create">({
             "bookmark.id": alreadyExists.id,
             "bookmark.already_existed": true,
           });
-          if (input.source && RESAVE_EXEMPT_SOURCES.has(input.source)) {
-            return { ...alreadyExists, alreadyExists: true };
-          }
-          const now = new Date();
-          // Re-saving always restores the bookmark and bumps it back to the top
-          // of the list. The rest of the metadata is only overwritten when the
-          // caller actually supplied it, so a bare re-save doesn't wipe the
-          // title or the note that are already on the existing bookmark.
-          const resaved = {
-            createdAt: input.createdAt ?? now,
-            archived: input.archived ?? false,
-            ...(input.title !== undefined ? { title: input.title } : {}),
-            ...(input.favourited !== undefined
-              ? { favourited: input.favourited }
-              : {}),
-            ...(input.note !== undefined ? { note: input.note } : {}),
-            ...(input.summary !== undefined ? { summary: input.summary } : {}),
-          };
-          await ctx.db
-            .update(bookmarks)
-            .set({ ...resaved, modifiedAt: now })
-            .where(
-              and(
-                eq(bookmarks.userId, ctx.user.id),
-                eq(bookmarks.id, alreadyExists.id),
-              ),
-            );
-          await Promise.all([
-            triggerSearchReindex(alreadyExists.id, {
-              groupId: ctx.user.id,
-            }),
-            new WebhooksService(ctx.db).triggerWebhook(
-              alreadyExists.id,
-              "edited",
-              ctx.user.id,
-              {
-                groupId: ctx.user.id,
-              },
-            ),
-          ]);
-
-          return {
-            ...alreadyExists,
-            ...resaved,
-            modifiedAt: now,
-            alreadyExists: true,
-          };
+          // Creation is idempotent for every source. Editing or restoring an
+          // existing bookmark must be an explicit update, never a side effect
+          // of importing or pasting the same URL again.
+          return { ...alreadyExists, alreadyExists: true };
         }
       }
 
@@ -348,6 +312,22 @@ export const bookmarksAppRouter = router({
 
       const bookmark = await ctx.db.transaction(
         (tx) => {
+          if (input.type === BookmarkTypes.LINK) {
+            const existing = tx
+              .select({ id: bookmarkLinks.id })
+              .from(bookmarkLinks)
+              .innerJoin(bookmarks, eq(bookmarks.id, bookmarkLinks.id))
+              .where(
+                and(
+                  eq(bookmarkLinks.url, input.url.trim()),
+                  eq(bookmarks.userId, ctx.user.id),
+                ),
+              )
+              .get();
+            if (existing) {
+              return { existingBookmarkId: existing.id };
+            }
+          }
           // Check user quota
           const quotaResult = QuotaService.canCreateBookmarkInTransaction(
             tx,
@@ -476,6 +456,20 @@ export const bookmarksAppRouter = router({
           behavior: "immediate",
         },
       );
+
+      if (
+        "existingBookmarkId" in bookmark &&
+        typeof bookmark.existingBookmarkId === "string"
+      ) {
+        const existing = (
+          await Bookmark.fromId(ctx, bookmark.existingBookmarkId, false)
+        ).asZBookmark();
+        addLogFields<"bookmark.create">({
+          "bookmark.id": existing.id,
+          "bookmark.already_existed": true,
+        });
+        return { ...existing, alreadyExists: true };
+      }
 
       bookmarkCreationCounter.labels(input.source ?? "unknown").inc();
       addLogFields<"bookmark.create">({

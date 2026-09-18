@@ -41,6 +41,7 @@ export interface ImportDeps {
 }
 
 export interface ImportOptions {
+  confirmImport?: (parsed: ParsedImportFile) => Promise<boolean>;
   concurrencyLimit?: number;
   parsers?: Partial<
     Record<ImportSource, (textContent: string) => ParsedImportFile>
@@ -48,6 +49,7 @@ export interface ImportOptions {
 }
 
 export interface ImportResult {
+  cancelled?: boolean;
   counts: ImportCounts;
   rootListId: string | null;
   importSessionId: string | null;
@@ -77,6 +79,14 @@ export async function importBookmarksFromFile(
     : parseImportFile(source, textContent);
   const parsedBookmarks = parsedImport.bookmarks;
   const parsedLists = parsedImport.lists;
+  if (options.confirmImport && !(await options.confirmImport(parsedImport))) {
+    return {
+      cancelled: true,
+      counts: { successes: 0, failures: 0, alreadyExisted: 0, total: 0 },
+      rootListId: null,
+      importSessionId: null,
+    };
+  }
   if (parsedBookmarks.length === 0) {
     return {
       counts: { successes: 0, failures: 0, alreadyExisted: 0, total: 0 },

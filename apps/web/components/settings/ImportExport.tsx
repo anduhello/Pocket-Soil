@@ -6,6 +6,14 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import FilePickerButton from "@/components/ui/file-picker-button";
 import { Progress } from "@/components/ui/progress";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -133,11 +141,84 @@ function ExportButton() {
 
 export function ImportExportRow() {
   const { t } = useTranslation();
-  const { importProgress, quotaError, runUploadBookmarkFile } =
-    useBookmarkImport();
+  const {
+    importProgress,
+    quotaError,
+    runUploadBookmarkFile,
+    preview,
+    resolvePreview,
+  } = useBookmarkImport();
 
   return (
     <div className="flex flex-col gap-3">
+      <Dialog
+        open={preview !== null}
+        onOpenChange={(open) => {
+          if (!open) resolvePreview(false);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>书签导入预览</DialogTitle>
+            <DialogDescription>
+              确认后仅导入新增条目。取消不会创建收藏或主题；已有收藏不会被覆盖。数量为当前检查结果，导入时还会再次防重。
+            </DialogDescription>
+          </DialogHeader>
+          {preview ? (
+            <>
+              <p role="status">
+                共 {preview.counts.total} 条：新增 {preview.counts.new} · 已收藏{" "}
+                {preview.counts.existing} · 文件内重复{" "}
+                {preview.counts.duplicate} · 无效 {preview.counts.invalid}
+              </p>
+              <ol
+                className="flex max-h-80 flex-col gap-3 overflow-y-auto"
+                aria-label="导入条目"
+              >
+                {preview.entries.slice(0, 100).map((entry, index) => (
+                  <li key={index} className="flex flex-col gap-1 break-all">
+                    <p>
+                      {index + 1}. {entry.title || entry.url || "无标题"} —{" "}
+                      {
+                        {
+                          new: "新增",
+                          existing: "已收藏",
+                          duplicate: "文件内重复",
+                          invalid: "无效",
+                        }[entry.status]
+                      }
+                    </p>
+                    <p className="text-muted-foreground">
+                      {entry.url || "缺少有效链接"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      原文件夹：
+                      {entry.paths
+                        .map((path) => path.join(" / "))
+                        .filter(Boolean)
+                        .join("；") || "未分类"}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+              {preview.entries.length > 100 ? (
+                <p>预览显示前 100 条，以上计数包含全部条目。</p>
+              ) : null}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => resolvePreview(false)}>
+                  取消
+                </Button>
+                <Button
+                  disabled={preview.counts.new === 0}
+                  onClick={() => resolvePreview(true)}
+                >
+                  确认导入 {preview.counts.new} 条
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
       {quotaError && (
         <Alert variant="destructive" className="relative">
           <AlertCircle className="h-4 w-4" />

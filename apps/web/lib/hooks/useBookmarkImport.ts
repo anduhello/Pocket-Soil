@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "@/components/ui/sonner";
 import { useTranslation } from "@/lib/i18n/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,8 @@ import {
 } from "@karakeep/shared/import-export";
 
 import { useCreateImportSession } from "./useImportSessions";
+import { previewImport } from "@karakeep/shared/import-export/preview";
+import type { ImportPreview } from "@karakeep/shared/import-export/preview";
 
 export interface ImportProgress {
   done: number;
@@ -28,6 +30,24 @@ export function useBookmarkImport() {
     Record<string, ImportProgress>
   >({});
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const decision = useRef<((confirmed: boolean) => void) | null>(null);
+  const active = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      decision.current?.(false);
+      decision.current = null;
+    };
+  }, []);
+  const resolvePreview = (confirmed: boolean) => {
+    const resolve = decision.current;
+    decision.current = null;
+    setPreview(null);
+    resolve?.(confirmed);
+  };
 
   const queryClient = useQueryClient();
   const { mutateAsync: createImportSession } = useCreateImportSession();
@@ -53,7 +73,26 @@ export function useBookmarkImport() {
 
       // First, parse the file to count bookmarks
       const textContent = await file.text();
-      const parsedImport = parseImportFile(source, textContent);
+      let parsedImport = parseImportFile(source, textContent);
+      let preparedPreview: ImportPreview | null = null;
+      if (source === "html") {
+        const candidates = previewImport(parsedImport);
+        const urls = candidates.parsed.bookmarks.flatMap((b) =>
+          b.content?.type === "link" ? [b.content.url] : [],
+        );
+        const existingUrls: string[] = [];
+        for (let offset = 0; offset < urls.length; offset += 100) {
+          const result = await queryClient.fetchQuery({
+            ...api.bookmarks.previewExistingLinks.queryOptions({
+              urls: urls.slice(offset, offset + 100),
+            }),
+            staleTime: 0,
+          });
+          existingUrls.push(...result.urls);
+        }
+        preparedPreview = previewImport(parsedImport, existingUrls);
+        parsedImport = preparedPreview.parsed;
+      }
       const bookmarkCount = parsedImport.bookmarks.length;
 
       // Check quota before proceeding
@@ -97,6 +136,15 @@ export function useBookmarkImport() {
           },
         },
         {
+          confirmImport: preparedPreview
+            ? async () => {
+                if (!mounted.current) return false;
+                return await new Promise<boolean>((resolve) => {
+                  decision.current = resolve;
+                  setPreview(preparedPreview);
+                });
+              }
+            : undefined,
           // Use a custom parser to avoid re-parsing the file
           parsers: {
             [source]: () => parsedImport,
@@ -106,6 +154,7 @@ export function useBookmarkImport() {
       return result;
     },
     onSuccess: async (result, variables) => {
+      if (result.cancelled) return;
       setImportProgress((prev) => {
         const next = { ...prev };
         if (result.importSessionId) {
@@ -144,10 +193,23 @@ export function useBookmarkImport() {
   });
 
   return {
+    preview,
+    resolvePreview,
     importProgress,
     quotaError,
     clearQuotaError: () => setQuotaError(null),
-    runUploadBookmarkFile: uploadBookmarkFileMutation.mutateAsync,
+    runUploadBookmarkFile: async (input: {
+      file: File;
+      source: ImportSource;
+    }) => {
+      if (active.current) return;
+      active.current = true;
+      try {
+        return await uploadBookmarkFileMutation.mutateAsync(input);
+      } finally {
+        active.current = false;
+      }
+    },
     isImporting: uploadBookmarkFileMutation.isPending,
   };
 }
