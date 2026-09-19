@@ -91,6 +91,30 @@
     "import_export": "导入与导出",
     "language": "界面语言",
     "language_error": "语言设置保存失败，请重试。",
+    "apps_title": "应用与扩展",
+    "apps_description": "未来从更多设备和工具把素材送进素材苗床。",
+    "apps_hub_title": "连接能力中心",
+    "apps_hub_description": "这里是后续扩展入口，不会在功能尚未可用时要求你授权账号或填写密钥。",
+    "apps_browser_title": "浏览器扩展",
+    "apps_browser_description": "浏览网页时一键收藏，并选择主题与标签。",
+    "apps_mobile_title": "移动端分享入口",
+    "apps_mobile_description": "从手机系统分享菜单直接保存视频、文章和灵感链接。",
+    "apps_connectors_title": "Obsidian 与 Notion",
+    "apps_connectors_description": "把选中的收藏、简介和标签同步到个人知识库。",
+    "apps_api_title": "素材苗床开放 API",
+    "apps_api_description": "供自动化工具和企业工作流安全地创建、查询与整理收藏。",
+    "planned": "规划中",
+    "billing_title": "金币与 AI 用量",
+    "billing_description": "查看免费额度、金币余额和最近的计费记录。",
+    "billing_balance": "金币余额",
+    "billing_free_remaining": "首次标签免费额度",
+    "billing_ai_used": "已使用 AI 标签",
+    "billing_unlimited": "无限免费",
+    "billing_remaining_unit": "剩余 {{count}} / {{limit}} 条",
+    "billing_used_unit": "{{count}} 条",
+    "billing_history": "金币流水",
+    "billing_no_history": "还没有金币变动记录。",
+    "billing_after": "变动后 {{balance}} 金币",
     "open_original": "打开原网页",
     "batch_title": "批量粘贴链接",
     "batch_description": "先预览，再确认导入。每条链接生成独立收藏，不展开网站列表。",
@@ -125,8 +149,8 @@
     "cancel_note": "取消不会创建收藏或主题。",
     "back": "返回修改",
     "confirm": "确认导入 {{count}} 条",
-    "read_note": "读取失败时仍会保留链接，便于手动补充。"
-    ,"other_import_tools": "其他迁移与导出工具",
+    "read_note": "读取失败时仍会保留链接，便于手动补充。",
+    "other_import_tools": "其他迁移与导出工具",
     "other_import_tools_help": "从旧收藏服务或浏览器文件迁移时再展开使用，日常导入无需操作。"
   },
   "common": {
@@ -340,6 +364,10 @@
     },
     "feeds": {
       "rss_subscriptions": "RSS订阅",
+      "description": "自动收集设计博客、资讯网站等公开订阅源的新内容。它不用于导入 B站、小红书或抖音收藏夹。",
+      "help_title": "RSS 是什么？",
+      "help_description": "RSS/Atom 是网站发布更新的标准地址。添加后，素材苗床会定期检查新文章并保存；请填写订阅源地址，而不是普通网页或平台收藏夹地址。",
+      "empty": "还没有 RSS 订阅。适合先添加常看的设计博客或行业资讯源。",
       "add_a_subscription": "添加订阅",
       "feed_enabled": "RSS 订阅已启用",
       "feed_disabled": "RSS 订阅已禁用"
@@ -468,7 +496,7 @@
       }
     },
     "broken_links": {
-      "broken_links": "失效链接",
+      "broken_links": "链接健康检查",
       "last_crawled_at": "最后抓取时间",
       "crawling_status": "抓取状态",
       "crawling_failed": "抓取失败"

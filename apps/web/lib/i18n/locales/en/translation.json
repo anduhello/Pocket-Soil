@@ -91,6 +91,30 @@
     "import_export": "Import & export",
     "language": "Interface language",
     "language_error": "Could not save the language. Please try again.",
+    "apps_title": "Apps & extensions",
+    "apps_description": "Bring material into Seedbed from more devices and tools in the future.",
+    "apps_hub_title": "Connection hub",
+    "apps_hub_description": "This is the home for future integrations. Seedbed will not ask for account access or API keys before a feature is ready.",
+    "apps_browser_title": "Browser extension",
+    "apps_browser_description": "Save a page in one click and choose its themes and tags while browsing.",
+    "apps_mobile_title": "Mobile share entry",
+    "apps_mobile_description": "Save videos, articles and inspiration links from your phone's share menu.",
+    "apps_connectors_title": "Obsidian & Notion",
+    "apps_connectors_description": "Sync selected bookmarks, descriptions and tags to your personal knowledge base.",
+    "apps_api_title": "Seedbed Open API",
+    "apps_api_description": "Let automations and enterprise workflows create, search and organize bookmarks securely.",
+    "planned": "Planned",
+    "billing_title": "Coins & AI usage",
+    "billing_description": "View free allowance, coin balance and recent billing activity.",
+    "billing_balance": "Coin balance",
+    "billing_free_remaining": "Free first-time tags",
+    "billing_ai_used": "AI tags used",
+    "billing_unlimited": "Unlimited free",
+    "billing_remaining_unit": "{{count}} / {{limit}} remaining",
+    "billing_used_unit": "{{count}} items",
+    "billing_history": "Coin activity",
+    "billing_no_history": "No coin activity yet.",
+    "billing_after": "{{balance}} coins after change",
     "open_original": "Open original",
     "batch_title": "Paste multiple links",
     "batch_description": "Preview before importing. Each link becomes a bookmark; website lists are not expanded.",
@@ -125,8 +149,8 @@
     "cancel_note": "Cancelling will not create bookmarks or themes.",
     "back": "Back to edit",
     "confirm": "Import {{count}} new links",
-    "read_note": "Links are kept even if reading fails, so you can add details manually."
-    ,"other_import_tools": "Other migration and export tools",
+    "read_note": "Links are kept even if reading fails, so you can add details manually.",
+    "other_import_tools": "Other migration and export tools",
     "other_import_tools_help": "Expand only when moving data from another service or browser file."
   },
   "common": {
@@ -409,6 +433,10 @@
     },
     "feeds": {
       "rss_subscriptions": "RSS Subscriptions",
+      "description": "Automatically collect new posts from public design blogs and news sites. This is not for importing Bilibili, Xiaohongshu or Douyin favourites.",
+      "help_title": "What is RSS?",
+      "help_description": "RSS/Atom is a standard update feed published by a website. Seedbed checks it periodically and saves new posts. Enter a feed URL, not a normal page or platform favourites URL.",
+      "empty": "No RSS subscriptions yet. Try a design blog or industry news feed you read regularly.",
       "add_a_subscription": "Add a Subscription",
       "feed_enabled": "RSS Feed enabled",
       "feed_disabled": "RSS Feed disabled"
@@ -555,7 +583,7 @@
       }
     },
     "broken_links": {
-      "broken_links": "Broken Links",
+      "broken_links": "Link health check",
       "last_crawled_at": "Last Crawled At",
       "crawling_status": "Crawling Status",
       "crawling_failed": "Crawling Failed"

@@ -30,6 +30,7 @@ import {
   Save,
   Trash2,
   XCircle,
+  Rss,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -476,13 +477,25 @@ export default function FeedSettings() {
   return (
     <SettingsPage
       title={t("settings.feeds.rss_subscriptions")}
+      description={t("settings.feeds.description")}
       action={<FeedsEditorDialog />}
     >
+      <div className="flex items-start gap-3 rounded-xl border bg-secondary/60 p-4">
+        <div className="rounded-full bg-primary/10 p-2 text-primary">
+          <Rss className="size-5" />
+        </div>
+        <div>
+          <p className="font-semibold">{t("settings.feeds.help_title")}</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {t("settings.feeds.help_description")}
+          </p>
+        </div>
+      </div>
       <SettingsSection>
         {isLoading && <FullPageSpinner />}
         {feeds && feeds.feeds.length == 0 && (
           <p className="rounded-md bg-muted p-3 text-center text-sm text-muted-foreground">
-            You don&apos;t have any RSS subscriptions yet.
+            {t("settings.feeds.empty")}
           </p>
         )}
         {feeds && feeds.feeds.length > 0 && (

@@ -149,12 +149,11 @@ export default function SidebarProfileOptions() {
           </DropdownMenuItem>
         )}
         <Separator className="my-2" />
-        <DropdownMenuItem disabled>
-          <Puzzle className="mr-2 size-4" />
-          {t("options.apps_extensions")}
-          <span className="ml-auto text-xs text-muted-foreground">
-            {t("options.coming_soon")}
-          </span>
+        <DropdownMenuItem asChild>
+          <Link href="/settings/apps">
+            <Puzzle className="mr-2 size-4" />
+            {t("options.apps_extensions")}
+          </Link>
         </DropdownMenuItem>
         <Separator className="my-2" />
         <DropdownMenuItem onClick={() => router.push("/logout")}>

@@ -15,6 +15,7 @@ import {
   Chrome,
   Clock,
   Code,
+  Coins,
   Database,
   FileText,
   Globe,
@@ -165,6 +166,7 @@ export default function StatsPage() {
   const { t } = useTranslation();
   const { data: stats, isLoading } = useQuery(api.users.stats.queryOptions());
   const { data: userSettings } = useQuery(api.users.settings.queryOptions());
+  const { data: wallet } = useQuery(api.billing.summary.queryOptions());
 
   const maxHourlyActivity = useMemo(() => {
     if (!stats) return 0;
@@ -220,8 +222,101 @@ export default function StatsPage() {
   return (
     <SettingsPage
       title={t("settings.stats.usage_statistics")}
-      description="Insights into your bookmarking habits and collection"
+      description={t("settings.stats.insights_description")}
     >
+      <Card className="overflow-hidden border-primary/20">
+        <CardHeader className="bg-primary/5">
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="size-5 text-amber-600" />
+            {t("seedbed.billing_title")}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {t("seedbed.billing_description")}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-5 pt-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-secondary/70 p-4">
+              <p className="text-sm text-muted-foreground">
+                {t("seedbed.billing_balance")}
+              </p>
+              <p className="mt-1 text-2xl font-bold">
+                {wallet?.balance ?? "—"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/70 p-4">
+              <p className="text-sm text-muted-foreground">
+                {t("seedbed.billing_free_remaining")}
+              </p>
+              <p className="mt-1 text-lg font-bold">
+                {wallet?.unlimitedAiTagging
+                  ? t("seedbed.billing_unlimited")
+                  : t("seedbed.billing_remaining_unit", {
+                      count:
+                        (wallet?.freeRemaining ?? 0) +
+                        (wallet?.bonusFreeRemaining ?? 0),
+                      limit: wallet?.freeLimit ?? 100,
+                    })}
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/70 p-4">
+              <p className="text-sm text-muted-foreground">
+                {t("seedbed.billing_ai_used")}
+              </p>
+              <p className="mt-1 text-lg font-bold">
+                {t("seedbed.billing_used_unit", {
+                  count: wallet?.freeUsed ?? 0,
+                })}
+              </p>
+            </div>
+          </div>
+          <div>
+            <h2 className="mb-3 font-semibold">
+              {t("seedbed.billing_history")}
+            </h2>
+            {!wallet?.transactions.length ? (
+              <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                {t("seedbed.billing_no_history")}
+              </p>
+            ) : (
+              <div className="divide-y rounded-xl border">
+                {wallet.transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between gap-4 p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {transaction.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(transaction.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p
+                        className={
+                          transaction.amount >= 0
+                            ? "font-semibold text-emerald-700"
+                            : "font-semibold text-amber-700"
+                        }
+                      >
+                        {transaction.amount >= 0 ? "+" : ""}
+                        {transaction.amount}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("seedbed.billing_after", {
+                          balance: transaction.balanceAfter,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard

@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { useClientConfig } from "@/lib/clientConfig";
 import { useTranslation } from "@/lib/i18n/client";
-import { useInterfaceLang } from "@/lib/userLocalSettings/bookmarksLayout";
-import { updateInterfaceLang } from "@/lib/userLocalSettings/userLocalSettings";
 import { useUserSettings } from "@/lib/userSettings";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Archive, Bookmark, Clock } from "lucide-react";
@@ -13,7 +11,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { useUpdateUserSettings } from "@karakeep/shared-react/hooks/users";
-import { langNameMappings } from "@karakeep/shared/langs";
 import {
   ZUserSettings,
   zUserSettingsSchema,
@@ -29,29 +26,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { SettingsSection } from "./SettingsPage";
-
-const LanguageSelect = () => {
-  const lang = useInterfaceLang();
-  return (
-    <Select
-      value={lang}
-      onValueChange={async (val) => {
-        await updateInterfaceLang(val);
-      }}
-    >
-      <SelectTrigger className="h-11">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {Object.entries(langNameMappings).map(([lang, name]) => (
-          <SelectItem key={lang} value={lang}>
-            {name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-};
 
 export default function UserOptions() {
   const { t } = useTranslation();
@@ -140,13 +114,6 @@ export default function UserOptions() {
   return (
     <Form {...form}>
       <SettingsSection title={t("settings.info.options")}>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">
-            {t("settings.info.interface_lang")}
-          </Label>
-          <LanguageSelect />
-        </div>
-
         <FormField
           control={form.control}
           name="timezone"
