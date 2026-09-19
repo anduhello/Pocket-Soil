@@ -120,21 +120,6 @@ export default function AllTagsView() {
   } = usePaginatedSearchTags({
     nameContains: searchQuery,
     sortBy,
-    attachedBy: "human",
-    limit: 50,
-  });
-
-  const {
-    data: allAiTagsRaw,
-    isFetching: isAiTagsFetching,
-    isLoading: isAiTagsLoading,
-    hasNextPage: hasNextPageAiTags,
-    fetchNextPage: fetchNextPageAiTags,
-    isFetchingNextPage: isFetchingNextPageAiTags,
-  } = usePaginatedSearchTags({
-    nameContains: searchQuery,
-    sortBy,
-    attachedBy: "ai",
     limit: 50,
   });
 
@@ -152,24 +137,25 @@ export default function AllTagsView() {
     limit: 50,
   });
 
-  const isFetching =
-    isHumanTagsFetching || isAiTagsFetching || isEmptyTagsFetching;
+  const isFetching = isHumanTagsFetching || isEmptyTagsFetching;
 
-  const { allHumanTags, allAiTags, allEmptyTags } = React.useMemo(() => {
+  const { allHumanTags, allEmptyTags } = React.useMemo(() => {
     return {
-      allHumanTags: allHumanTagsRaw?.tags ?? [],
-      allAiTags: allAiTagsRaw?.tags ?? [],
+      // Seedbed keeps one personal tag library. AI suggestions and manually
+      // entered tags live together, so only unused tags are separated below.
+      allHumanTags:
+        allHumanTagsRaw?.tags.filter((tag) => tag.numBookmarks > 0) ?? [],
       allEmptyTags: allEmptyTagsRaw?.tags ?? [],
     };
-  }, [allHumanTagsRaw, allAiTagsRaw, allEmptyTagsRaw]);
+  }, [allHumanTagsRaw, allEmptyTagsRaw]);
 
   useEffect(() => {
-    const allTags = [...allHumanTags, ...allAiTags, ...allEmptyTags];
+    const allTags = [...allHumanTags, ...allEmptyTags];
     setVisibleTagIds(allTags.map((tag) => tag.id) ?? []);
     return () => {
       setVisibleTagIds([]);
     };
-  }, [allHumanTags, allAiTags, allEmptyTags, setVisibleTagIds]);
+  }, [allHumanTags, allEmptyTags, setVisibleTagIds]);
 
   const sortLabels: Record<typeof sortBy, string> = {
     name: t("tags.sort_by_name"),
@@ -354,39 +340,6 @@ export default function AllTagsView() {
               variant="secondary"
               onClick={() => fetchNextPageHumanTags()}
               loading={isFetchingNextPageHumanTags}
-              ignoreDemoMode
-            >
-              {t("actions.load_more")}
-            </ActionButton>
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>{t("tags.ai_tags")}</span>
-            <Badge variant="secondary">
-              {allAiTags.length}
-              {hasNextPageAiTags ? "+" : ""}
-            </Badge>
-          </CardTitle>
-          <CardDescription>{t("tags.ai_tags_info")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {tagsToPill(
-            allAiTags,
-            isBulkEditEnabled,
-            {
-              emptyMessage: t("tags.no_ai_tags"),
-              searchEmptyMessage: t("tags.no_tags_match_your_search"),
-            },
-            isAiTagsLoading,
-          )}
-          {hasNextPageAiTags && (
-            <ActionButton
-              variant="secondary"
-              onClick={() => fetchNextPageAiTags()}
-              loading={isFetchingNextPageAiTags}
               ignoreDemoMode
             >
               {t("actions.load_more")}
