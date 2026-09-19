@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { signIn } from "@/lib/auth/client";
 import { useClientConfig } from "@/lib/clientConfig";
+import { useTranslation } from "@/lib/i18n/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -32,6 +33,7 @@ const OAUTH_FAILED = "OAuth login failed: ";
 const VERIFY_EMAIL_ERROR = "Please verify your email address before signing in";
 
 export default function CredentialsForm() {
+  const { t } = useTranslation();
   const [signinError, setSigninError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -107,13 +109,13 @@ export default function CredentialsForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("common.email")}</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
                     autoComplete="email"
                     spellCheck={false}
-                    placeholder="Enter your email"
+                    placeholder={t("seedbed.email_placeholder")}
                     {...field}
                   />
                 </FormControl>
@@ -127,12 +129,12 @@ export default function CredentialsForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("common.password")}</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
                     autoComplete="current-password"
-                    placeholder="Enter your password"
+                    placeholder={t("seedbed.password_placeholder")}
                     {...field}
                   />
                 </FormControl>
@@ -147,7 +149,7 @@ export default function CredentialsForm() {
             loading={form.formState.isSubmitting}
             className="w-full"
           >
-            Sign In
+            {t("seedbed.signin")}
           </ActionButton>
 
           <div className="text-center">
@@ -155,20 +157,20 @@ export default function CredentialsForm() {
               href="/forgot-password"
               className="text-sm text-muted-foreground underline hover:text-primary"
             >
-              Forgot your password?
+              {t("seedbed.forgot")}
             </Link>
           </div>
         </form>
       </Form>
 
       <div className="text-center">
-        <p className="text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
+        <p className="text-sm text-muted-foreground">
+          {t("seedbed.no_account")}{" "}
           <Link
             href="/signup"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-primary hover:underline"
           >
-            Sign up
+            {t("seedbed.signup")}
           </Link>
         </p>
       </div>

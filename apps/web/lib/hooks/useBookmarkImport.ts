@@ -12,9 +12,13 @@ import {
   ImportSource,
   parseImportFile,
 } from "@karakeep/shared/import-export";
+import type { ParsedImportFile } from "@karakeep/shared/import-export";
 
 import { useCreateImportSession } from "./useImportSessions";
-import { previewImport } from "@karakeep/shared/import-export/preview";
+import {
+  previewImport,
+  selectImportPreview,
+} from "@karakeep/shared/import-export/preview";
 import type { ImportPreview } from "@karakeep/shared/import-export/preview";
 
 export interface ImportProgress {
@@ -31,22 +35,39 @@ export function useBookmarkImport() {
   >({});
   const [quotaError, setQuotaError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const decision = useRef<((confirmed: boolean) => void) | null>(null);
+  const [previewNotice, setPreviewNotice] = useState<string | null>(null);
+  const decision = useRef<
+    ((confirmed: ParsedImportFile | null) => void) | null
+  >(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const selection = useRef<Set<number>>(new Set());
+  const [previewPage, setPreviewPage] = useState(0);
+  const updateSelection = (next: Set<number>) => {
+    selection.current = next;
+    setSelected(next);
+  };
   const active = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
-      decision.current?.(false);
+      decision.current?.(null);
       decision.current = null;
     };
   }, []);
   const resolvePreview = (confirmed: boolean) => {
+    if (confirmed && (!preview || selection.current.size === 0)) return;
+    const chosen =
+      confirmed && preview
+        ? selectImportPreview(preview, selection.current)
+        : null;
     const resolve = decision.current;
     decision.current = null;
     setPreview(null);
-    resolve?.(confirmed);
+    setPreviewNotice(null);
+    updateSelection(new Set());
+    resolve?.(chosen);
   };
 
   const queryClient = useQueryClient();
@@ -64,18 +85,28 @@ export function useBookmarkImport() {
     mutationFn: async ({
       file,
       source,
+      prepared,
+      listName,
+      notice,
     }: {
       file: File;
       source: ImportSource;
+      prepared?: ParsedImportFile;
+      listName?: string;
+      notice?: string;
     }) => {
       // Clear any previous quota error
       setQuotaError(null);
 
       // First, parse the file to count bookmarks
       const textContent = await file.text();
-      let parsedImport = parseImportFile(source, textContent);
+      let parsedImport =
+        prepared ??
+        parseImportFile(source, textContent, {
+          preserveDuplicates: true,
+        });
       let preparedPreview: ImportPreview | null = null;
-      if (source === "html") {
+      if (source === "html" || source === "links") {
         const candidates = previewImport(parsedImport);
         const urls = candidates.parsed.bookmarks.flatMap((b) =>
           b.content?.type === "link" ? [b.content.url] : [],
@@ -93,10 +124,8 @@ export function useBookmarkImport() {
         preparedPreview = previewImport(parsedImport, existingUrls);
         parsedImport = preparedPreview.parsed;
       }
-      const bookmarkCount = parsedImport.bookmarks.length;
-
-      // Check quota before proceeding
-      if (bookmarkCount > 0) {
+      const checkQuota = async (bookmarkCount: number) => {
+        if (bookmarkCount === 0) return;
         const quotaUsage = await queryClient.fetchQuery(
           api.subscriptions.getQuotaUsage.queryOptions(),
         );
@@ -114,14 +143,16 @@ export function useBookmarkImport() {
             throw new Error(errorMsg);
           }
         }
-      }
+      };
+      // Preview imports are checked after the user chooses the actual subset.
+      if (!preparedPreview) await checkQuota(parsedImport.bookmarks.length);
 
       // Proceed with import if quota check passes
       const result = await importBookmarksFromFile(
         {
           file,
           source,
-          rootListName: t("settings.import.imported_bookmarks"),
+          rootListName: listName ?? t("settings.import.imported_bookmarks"),
           deps: {
             createImportSession,
             createList,
@@ -139,10 +170,24 @@ export function useBookmarkImport() {
           confirmImport: preparedPreview
             ? async () => {
                 if (!mounted.current) return false;
-                return await new Promise<boolean>((resolve) => {
-                  decision.current = resolve;
-                  setPreview(preparedPreview);
-                });
+                const chosen = await new Promise<ParsedImportFile | null>(
+                  (resolve) => {
+                    decision.current = resolve;
+                    updateSelection(
+                      new Set(
+                        preparedPreview.parsed.bookmarks.map(
+                          (_bookmark, index) => index,
+                        ),
+                      ),
+                    );
+                    setPreviewPage(0);
+                    setPreview(preparedPreview);
+                    setPreviewNotice(notice ?? null);
+                  },
+                );
+                if (!chosen) return false;
+                await checkQuota(chosen.bookmarks.length);
+                return chosen;
               }
             : undefined,
           // Use a custom parser to avoid re-parsing the file
@@ -155,6 +200,9 @@ export function useBookmarkImport() {
     },
     onSuccess: async (result, variables) => {
       if (result.cancelled) return;
+      await queryClient.invalidateQueries(
+        api.importSessions.listImportSessions.pathFilter(),
+      );
       setImportProgress((prev) => {
         const next = { ...prev };
         if (result.importSessionId) {
@@ -194,6 +242,35 @@ export function useBookmarkImport() {
 
   return {
     preview,
+    previewNotice,
+    selected,
+    previewPage,
+    setPreviewPage,
+    selectAll: () =>
+      updateSelection(
+        new Set(
+          preview?.parsed.bookmarks.map((_bookmark, index) => index) ?? [],
+        ),
+      ),
+    selectNone: () => updateSelection(new Set()),
+    invertSelection: () => {
+      const next = new Set<number>();
+      for (
+        let index = 0;
+        index < (preview?.parsed.bookmarks.length ?? 0);
+        index++
+      ) {
+        if (!selection.current.has(index)) next.add(index);
+      }
+      updateSelection(next);
+    },
+    toggleSelection: (index: number, checked: boolean) => {
+      if (!preview?.parsed.bookmarks[index]) return;
+      const next = new Set(selection.current);
+      if (checked) next.add(index);
+      else next.delete(index);
+      updateSelection(next);
+    },
     resolvePreview,
     importProgress,
     quotaError,
@@ -201,6 +278,9 @@ export function useBookmarkImport() {
     runUploadBookmarkFile: async (input: {
       file: File;
       source: ImportSource;
+      prepared?: ParsedImportFile;
+      listName?: string;
+      notice?: string;
     }) => {
       if (active.current) return;
       active.current = true;

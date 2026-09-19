@@ -14,7 +14,7 @@ import { toast } from "@/components/ui/sonner";
 import { BOOKMARK_DRAG_MIME } from "@/lib/bookmark-drag";
 import { useTranslation } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Layers, Folder } from "lucide-react";
 
 import type { ZBookmarkList } from "@karakeep/shared/types/lists";
 import {
@@ -216,7 +216,7 @@ export default function AllLists({
     <ul className="sidebar-scrollbar max-h-full gap-y-2 overflow-auto text-sm">
       <li className="flex justify-between pb-3">
         <p className="pl-2 text-xs uppercase tracking-wider text-muted-foreground">
-          Lists
+          {t("seedbed.themes")}
         </p>
         <EditListModal>
           <Link href="#">
@@ -229,16 +229,16 @@ export default function AllLists({
       </li>
       <SidebarItem
         collapseButton={<span className="size-4" />}
-        logo={<span className="text-lg">📋</span>}
-        name={t("lists.all_lists")}
+        logo={<Layers size={18} />}
+        name={t("seedbed.all_themes")}
         path={`/dashboard/lists`}
         linkClassName="py-0.5 px-1"
         right={<InvitationNotificationBadge />}
       />
       <SidebarItem
         collapseButton={<span className="size-4" />}
-        logo={<span className="text-lg">⭐️</span>}
-        name={t("lists.favourites")}
+        logo={<Folder size={18} />}
+        name={t("seedbed.my_favourites")}
         path={`/dashboard/favourites`}
         linkClassName="py-0.5 px-1"
       />

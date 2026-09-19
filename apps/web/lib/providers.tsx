@@ -2,6 +2,7 @@
 
 import type { UserLocalSettings } from "@/lib/userLocalSettings/types";
 import React, { useState } from "react";
+import type { Resource } from "i18next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Session, SessionProvider } from "@/lib/auth/client";
@@ -53,11 +54,13 @@ export default function Providers({
   session,
   clientConfig,
   userLocalSettings,
+  translationResources,
 }: {
   children: React.ReactNode;
   session: Session | null;
   clientConfig: ClientConfig;
   userLocalSettings: UserLocalSettings;
+  translationResources: Resource;
 }) {
   const queryClient = getQueryClient();
 
@@ -85,10 +88,13 @@ export default function Providers({
         <SessionProvider session={session}>
           <QueryClientProvider client={queryClient}>
             <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-              <CustomI18nextProvider lang={userLocalSettings.lang}>
+              <CustomI18nextProvider
+                lang={userLocalSettings.lang}
+                resources={translationResources}
+              >
                 <ThemeProvider
                   attribute="class"
-                  defaultTheme="system"
+                  defaultTheme="light"
                   enableSystem
                   disableTransitionOnChange
                 >

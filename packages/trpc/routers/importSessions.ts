@@ -13,9 +13,21 @@ import {
 } from "@karakeep/shared/types/importSessions";
 
 import type { AuthedContext } from "../index";
-import { createScopedAuthedProcedure, router } from "../index";
+import {
+  createScopedAuthedProcedure,
+  createRateLimitMiddleware,
+  router,
+} from "../index";
+import { readBilibiliFavorites } from "../lib/bilibiliFavorites";
+import { readGitHubStars } from "../lib/githubStars";
+import {
+  suggestSeedbedTags,
+  zSeedbedTaggingRequest,
+} from "../lib/seedbedTagging";
 import { actorFromContext } from "../lib/actor";
 import { ImportSessionsService } from "../models/importSessions.service";
+import { CoinBillingService } from "../models/coinBilling";
+import { Tag } from "../models/tags";
 
 const importSessionsProcedure = createScopedAuthedProcedure(
   "importSessions",
@@ -52,6 +64,61 @@ const ensureImportSessionAccess = experimental_trpcMiddleware<{
 });
 
 export const importSessionsRouter = router({
+  previewGitHubStars: importSessionsProcedure
+    .use(
+      createRateLimitMiddleware({
+        name: "importSessions.previewGitHubStars",
+        windowMs: 60000,
+        maxRequests: 3,
+      }),
+    )
+    .input(z.object({ url: z.string().trim().max(2048) }))
+    .mutation(async ({ input }) => readGitHubStars(input.url)),
+  suggestBilibiliTags: importSessionsProcedure
+    .use(
+      createRateLimitMiddleware({
+        name: "seedbed.tagSuggestions.daily",
+        windowMs: 86400000,
+        maxRequests: 100,
+      }),
+    )
+    .input(zSeedbedTaggingRequest)
+    .mutation(async ({ input, ctx }) => {
+      const billing = new CoinBillingService(ctx.db);
+      const reservation = await billing.reserve(
+        ctx.user.id,
+        input.billingMode,
+        input.videos.length,
+        input.billingRequestId,
+      );
+      try {
+        const library = await Tag.getAll(ctx, {
+          sortBy: "usage",
+          pagination: { page: 0, limit: 200 },
+        });
+        const result = await suggestSeedbedTags(
+          { videos: input.videos },
+          fetch,
+          process.env,
+          library.tags.map((tag) => tag.name),
+        );
+        await billing.settle(reservation.id);
+        return result;
+      } catch (error) {
+        await billing.refund(reservation.id, "AI 标签匹配失败，自动退回金币");
+        throw error;
+      }
+    }),
+  previewBilibiliFavorites: importSessionsProcedure
+    .use(
+      createRateLimitMiddleware({
+        name: "importSessions.previewBilibiliFavorites",
+        windowMs: 60000,
+        maxRequests: 3,
+      }),
+    )
+    .input(z.object({ url: z.string().trim().max(2048) }))
+    .mutation(async ({ input }) => readBilibiliFavorites(input.url)),
   createImportSession: importSessionsProcedure
     .input(zCreateImportSessionRequestSchema)
     .output(z.object({ id: z.string() }))
@@ -134,6 +201,14 @@ export const importSessionsRouter = router({
     .mutation(async ({ ctx }) => {
       await ctx.importSessionsService.resume(ctx.importSession);
     }),
+
+  retryFailedImportSession: importSessionsProcedure
+    .input(z.object({ importSessionId: z.string() }))
+    .output(z.object({ retried: z.number() }))
+    .use(ensureImportSessionAccess)
+    .mutation(async ({ ctx }) => ({
+      retried: await ctx.importSessionsService.retryFailed(ctx.importSession),
+    })),
 
   getImportSessionResults: importSessionsProcedure
     .input(

@@ -253,6 +253,8 @@ export const zNewBookmarkRequestSchema = z.intersection(
     // A mechanism to prioritize crawling of bookmarks depending on whether
     // they were created by a user interaction or by a bulk import.
     crawlPriority: z.enum(["low", "normal"]).optional(),
+    // Explicit metadata-only import; does not claim that a page was crawled.
+    metadataOnly: z.boolean().optional(),
     // Deprecated
     importSessionId: z.string().optional(),
     source: zBookmarkSourceSchema.optional(),

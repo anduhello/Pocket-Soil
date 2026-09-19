@@ -17,8 +17,9 @@ import { useSession } from "@/lib/auth/client";
 import { useTranslation } from "@/lib/i18n/client";
 import { useInBookmarkGridStore } from "@/lib/store/useInBookmarkGridStore";
 import { useKeyboardNavigationStore } from "@/lib/store/useKeyboardNavigationStore";
+import { useQuery } from "@tanstack/react-query";
 import {
-  BookOpen,
+  Coins,
   Keyboard,
   LogOut,
   Moon,
@@ -27,11 +28,11 @@ import {
   Settings,
   Shield,
   Sun,
-  Twitter,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { useWhoAmI } from "@karakeep/shared-react/hooks/users";
+import { useTRPC } from "@karakeep/shared-react/trpc";
 
 import { AdminNoticeBadge } from "../../admin/AdminNotices";
 
@@ -61,6 +62,10 @@ export default function SidebarProfileOptions() {
   const toggleTheme = useToggleTheme();
   const { data: session } = useSession();
   const { data: whoami } = useWhoAmI();
+  const api = useTRPC();
+  const { data: wallet } = useQuery(
+    api.billing.summary.queryOptions(undefined, { enabled: !!session }),
+  );
   const router = useRouter();
   const inBookmarkGrid = useInBookmarkGridStore(
     (state) => state.inBookmarkGrid,
@@ -103,6 +108,13 @@ export default function SidebarProfileOptions() {
           </div>
         </div>
         <Separator className="my-2" />
+        <DropdownMenuItem disabled className="opacity-100">
+          <Coins className="mr-2 size-4 text-amber-600" />
+          <span>{t("seedbed.coin_balance")}</span>
+          <span className="ml-auto font-semibold text-foreground">
+            {wallet?.balance ?? "—"}
+          </span>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <Settings className="mr-2 size-4" />
@@ -137,23 +149,12 @@ export default function SidebarProfileOptions() {
           </DropdownMenuItem>
         )}
         <Separator className="my-2" />
-        <DropdownMenuItem asChild>
-          <a href="https://karakeep.app/apps" target="_blank" rel="noreferrer">
-            <Puzzle className="mr-2 size-4" />
-            {t("options.apps_extensions")}
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="https://docs.karakeep.app" target="_blank" rel="noreferrer">
-            <BookOpen className="mr-2 size-4" />
-            {t("options.documentation")}
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="https://x.com/karakeep_app" target="_blank" rel="noreferrer">
-            <Twitter className="mr-2 size-4" />
-            {t("options.follow_us_on_x")}
-          </a>
+        <DropdownMenuItem disabled>
+          <Puzzle className="mr-2 size-4" />
+          {t("options.apps_extensions")}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {t("options.coming_soon")}
+          </span>
         </DropdownMenuItem>
         <Separator className="my-2" />
         <DropdownMenuItem onClick={() => router.push("/logout")}>

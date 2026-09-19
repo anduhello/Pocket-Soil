@@ -30,6 +30,7 @@ import {
   Pencil,
   RotateCw,
   SquarePen,
+  Tags,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ import DeleteBookmarkConfirmationDialog from "./DeleteBookmarkConfirmationDialog
 import { EditBookmarkDialog } from "./EditBookmarkDialog";
 import { ArchivedActionIcon, FavouritedActionIcon } from "./icons";
 import { useManageListsModal } from "./ManageListsModal";
+import { useTagModel } from "./TagModal";
 
 interface ActionItem {
   id: string;
@@ -88,6 +90,7 @@ function isSubsectionItem(item: ActionItemType): item is SubsectionItem {
 
 export default function BookmarkOptions({ bookmark }: { bookmark: ZBookmark }) {
   const { t } = useTranslation();
+  const { setOpen: setTagModalOpen, content: tagModal } = useTagModel(bookmark);
   const linkId = bookmark.id;
   const { data: session } = useSession();
 
@@ -260,6 +263,14 @@ export default function BookmarkOptions({ bookmark }: { bookmark: ZBookmark }) {
       visible: isOwner,
       disabled: false,
       onClick: () => setEditBookmarkDialogOpen(true),
+    },
+    {
+      id: "edit-tags",
+      title: t("actions.edit_tags"),
+      icon: <Tags data-icon="inline-start" />,
+      visible: isOwner,
+      disabled: demoMode,
+      onClick: () => setTagModalOpen(true),
     },
     {
       id: "open-editor",
@@ -478,6 +489,7 @@ export default function BookmarkOptions({ bookmark }: { bookmark: ZBookmark }) {
   return (
     <>
       {manageListsModal}
+      {tagModal}
       <EditBookmarkDialog
         bookmark={bookmark}
         open={isEditBookmarkDialogOpen}

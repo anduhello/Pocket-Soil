@@ -425,6 +425,10 @@ export class ImportWorker {
           ...baseRequest,
           type: BookmarkTypes.LINK,
           url: staged.url,
+          metadataOnly:
+            /^https:\/\/(?:www\.bilibili\.com\/video\/BV[A-Za-z0-9]{10}|github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/.test(
+              staged.url,
+            ),
         };
       } else if (staged.type === "text") {
         if (!staged.content) {

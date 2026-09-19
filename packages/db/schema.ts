@@ -117,6 +117,84 @@ export const users = sqliteTable("user", {
   inferredTagLang: text("inferredTagLang"),
 });
 
+export const coinWallets = sqliteTable("coinWallet", {
+  userId: text("userId")
+    .notNull()
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  balance: integer("balance").notNull().default(20),
+  freeAiTaggingsUsed: integer("freeAiTaggingsUsed").notNull().default(0),
+  bonusFreeAiTaggings: integer("bonusFreeAiTaggings").notNull().default(0),
+  unlimitedAiTagging: integer("unlimitedAiTagging", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  createdAt: createdAtField(),
+  modifiedAt: modifiedAtField(),
+});
+
+export const coinTransactions = sqliteTable(
+  "coinTransaction",
+  {
+    id: text("id")
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    amount: integer("amount").notNull(),
+    balanceAfter: integer("balanceAfter").notNull(),
+    kind: text("kind", {
+      enum: ["welcome_grant", "ai_tagging", "refund", "admin_adjustment"],
+    }).notNull(),
+    description: text("description").notNull(),
+    idempotencyKey: text("idempotencyKey").notNull().unique(),
+    relatedReservationId: text("relatedReservationId"),
+    createdByUserId: text("createdByUserId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAtField(),
+  },
+  (transaction) => [
+    index("coinTransactions_userId_createdAt_idx").on(
+      transaction.userId,
+      transaction.createdAt,
+    ),
+  ],
+);
+
+export const aiBillingReservations = sqliteTable(
+  "aiBillingReservation",
+  {
+    id: text("id")
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotencyKey").notNull().unique(),
+    mode: text("mode", { enum: ["initial_import", "rematch"] }).notNull(),
+    itemCount: integer("itemCount").notNull(),
+    freeItemCount: integer("freeItemCount").notNull(),
+    bonusFreeItemCount: integer("bonusFreeItemCount").notNull().default(0),
+    coinCost: integer("coinCost").notNull(),
+    status: text("status", {
+      enum: ["reserved", "settled", "refunded"],
+    })
+      .notNull()
+      .default("reserved"),
+    createdAt: createdAtField(),
+    settledAt: integer("settledAt", { mode: "timestamp" }),
+  },
+  (reservation) => [
+    index("aiBillingReservations_userId_createdAt_idx").on(
+      reservation.userId,
+      reservation.createdAt,
+    ),
+  ],
+);
+
 export const accounts = sqliteTable(
   "account",
   {

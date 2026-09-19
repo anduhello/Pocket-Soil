@@ -45,6 +45,63 @@ vi.mock("@karakeep/shared-server", async (original) => {
 beforeEach<CustomTestContext>(defaultBeforeEach(true));
 
 describe("Bookmark Routes", () => {
+  test<CustomTestContext>("metadata-only GitHub import preserves description and skips crawler", async ({
+    apiCallers,
+    db,
+  }) => {
+    const mocks = getTestQueueMocks();
+    const before = mocks.lowPriorityCrawlerEnqueue.mock.calls.length;
+    const result = await apiCallers[0].bookmarks.createBookmark({
+      type: BookmarkTypes.LINK,
+      url: "https://github.com/fastapi/fastapi",
+      source: "import",
+      crawlPriority: "low",
+      metadataOnly: true,
+      title: "fastapi/fastapi",
+      note: "Public repository description",
+    });
+    const link = await db
+      .select()
+      .from(bookmarkLinks)
+      .where(eq(bookmarkLinks.id, result.id))
+      .get();
+    expect(link?.crawlStatus).toBeNull();
+    expect(mocks.lowPriorityCrawlerEnqueue.mock.calls.length).toBe(before);
+    expect(sharedServer.OpenAIQueue.enqueue).not.toHaveBeenCalled();
+    expect(result.note).toBe("Public repository description");
+  });
+  test<CustomTestContext>("metadata-only Bilibili import skips crawl and AI without claiming a crawl", async ({
+    apiCallers,
+    db,
+  }) => {
+    const mocks = getTestQueueMocks();
+    const before = mocks.lowPriorityCrawlerEnqueue.mock.calls.length;
+    const result = await apiCallers[0].bookmarks.createBookmark({
+      type: BookmarkTypes.LINK,
+      url: "https://www.bilibili.com/video/BV1u2Ke6hEZk",
+      source: "import",
+      crawlPriority: "low",
+      metadataOnly: true,
+      title: "标题",
+      note: "简介",
+    });
+    const link = await db
+      .select()
+      .from(bookmarkLinks)
+      .where(eq(bookmarkLinks.id, result.id))
+      .get();
+    const saved = await db
+      .select()
+      .from(bookmarks)
+      .where(eq(bookmarks.id, result.id))
+      .get();
+    expect(link?.crawlStatus).toBeNull();
+    expect(saved?.taggingStatus).toBeNull();
+    expect(saved?.summarizationStatus).toBeNull();
+    expect(saved?.note).toBe("简介");
+    expect(mocks.lowPriorityCrawlerEnqueue.mock.calls.length).toBe(before);
+    expect(sharedServer.OpenAIQueue.enqueue).not.toHaveBeenCalled();
+  });
   async function createTestTag(api: APICallerType, tagName: string) {
     const result = await api.tags.create({ name: tagName });
     return result.id;

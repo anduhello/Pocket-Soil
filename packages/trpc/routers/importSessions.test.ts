@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 
 import {
   bookmarkLinks,
+  bookmarkTags,
   bookmarks,
   bookmarkTexts,
   importSessionBookmarks,
@@ -25,6 +26,137 @@ import { defaultBeforeEach } from "../testUtils";
 beforeEach<CustomTestContext>(defaultBeforeEach(true));
 
 describe("ImportSessions Routes", () => {
+  test<CustomTestContext>("AI library contains only the current user's tags", async ({
+    apiCallers,
+    db,
+  }) => {
+    const first = await apiCallers[0].tags.create({ name: "界面设计" });
+    const second = await apiCallers[1].tags.create({
+      name: "另一账号的私人标签",
+    });
+    const rows = await db.select().from(bookmarkTags);
+    expect(rows.map((row) => row.id)).toEqual(
+      expect.arrayContaining([first.id, second.id]),
+    );
+    vi.stubEnv("SEEDBED_AI_API_KEY", "test-only-not-real");
+    const provider = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  items: [{ id: 0, tags: ["界面设计"] }],
+                }),
+              },
+            },
+          ],
+        }),
+      ),
+    );
+    try {
+      await apiCallers[0].importSessions.suggestBilibiliTags({
+        billingMode: "initial_import",
+        billingRequestId: "7b5ec8f0-dc66-4a57-bdb4-e519fd1b28e8",
+        videos: [
+          {
+            url: "https://www.bilibili.com/video/BV1u2Ke6hEZk",
+            title: "设计教程",
+            intro: "设计",
+          },
+        ],
+      });
+      const body = JSON.parse(String(provider.mock.calls[0][1]?.body));
+      expect(body.messages[0].content).toContain("界面设计");
+      expect(body.messages[0].content).not.toContain("另一账号的私人标签");
+    } finally {
+      provider.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+  test<CustomTestContext>("retry only failed entries and preserve completed results", async ({
+    apiCallers,
+    db,
+  }) => {
+    const api = apiCallers[0].importSessions;
+    const session = await api.createImportSession({ name: "Retry batch" });
+    await db.insert(importStagingBookmarks).values([
+      {
+        id: "retry-failed",
+        importSessionId: session.id,
+        type: "text",
+        content: "failed",
+        status: "failed",
+        result: "rejected",
+        resultReason: "temporary failure",
+      },
+      {
+        id: "retry-success",
+        importSessionId: session.id,
+        type: "text",
+        content: "saved",
+        status: "completed",
+        result: "accepted",
+      },
+      {
+        id: "retry-duplicate",
+        importSessionId: session.id,
+        type: "text",
+        content: "duplicate",
+        status: "completed",
+        result: "skipped_duplicate",
+      },
+    ]);
+    await db
+      .update(importSessions)
+      .set({ status: "completed" })
+      .where(eq(importSessions.id, session.id));
+    await expect(
+      apiCallers[1].importSessions.retryFailedImportSession({
+        importSessionId: session.id,
+      }),
+    ).rejects.toThrow();
+    expect(
+      await api.retryFailedImportSession({ importSessionId: session.id }),
+    ).toEqual({ retried: 1 });
+    const rows = await db.query.importStagingBookmarks.findMany({
+      where: eq(importStagingBookmarks.importSessionId, session.id),
+    });
+    expect(rows.find((row) => row.id === "retry-failed")).toMatchObject({
+      status: "pending",
+      result: null,
+      resultReason: null,
+    });
+    expect(rows.find((row) => row.id === "retry-success")).toMatchObject({
+      status: "completed",
+      result: "accepted",
+    });
+    expect(rows.find((row) => row.id === "retry-duplicate")).toMatchObject({
+      status: "completed",
+      result: "skipped_duplicate",
+    });
+    await expect(
+      api.retryFailedImportSession({ importSessionId: session.id }),
+    ).rejects.toThrow();
+  });
+
+  test<CustomTestContext>("retry finished batch without failures is a no-op", async ({
+    apiCallers,
+    db,
+  }) => {
+    const api = apiCallers[0].importSessions;
+    const session = await api.createImportSession({ name: "Finished batch" });
+    await db
+      .update(importSessions)
+      .set({ status: "completed" })
+      .where(eq(importSessions.id, session.id));
+    expect(
+      await api.retryFailedImportSession({ importSessionId: session.id }),
+    ).toEqual({ retried: 0 });
+    expect(
+      (await api.getImportSessionStats({ importSessionId: session.id })).status,
+    ).toBe("completed");
+  });
   async function createTestList(api: APICallerType) {
     const newListInput: z.infer<typeof zNewBookmarkListSchema> = {
       name: "Test Import List",

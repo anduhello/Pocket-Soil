@@ -50,9 +50,29 @@ export function previewImport(
           : bookmark,
       );
     }
-    return { title: bookmark.title, url, paths: bookmark.paths, status };
+    return {
+      title: bookmark.title,
+      url,
+      paths: bookmark.paths,
+      status,
+      notes: bookmark.notes,
+      tags: bookmark.tags,
+      bookmarkIndex: status === "new" ? accepted.length - 1 : null,
+    };
   });
   return { counts, entries, parsed: { ...parsed, bookmarks: accepted } };
 }
 
 export type ImportPreview = ReturnType<typeof previewImport>;
+
+export function selectImportPreview(
+  preview: ImportPreview,
+  selected: ReadonlySet<number>,
+): ParsedImportFile {
+  return {
+    ...preview.parsed,
+    bookmarks: preview.parsed.bookmarks.filter((_bookmark, index) =>
+      selected.has(index),
+    ),
+  };
+}

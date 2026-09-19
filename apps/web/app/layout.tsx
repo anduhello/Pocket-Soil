@@ -7,6 +7,7 @@ import "@karakeep/tailwind-config/globals.css";
 import type { Viewport } from "next";
 import React from "react";
 import Providers from "@/lib/providers";
+import { getTranslationResources } from "@/lib/i18n/server";
 import { getUserLocalSettings } from "@/lib/userLocalSettings/userLocalSettings";
 import { getServerAuthSession } from "@/server/auth";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -20,10 +21,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Karakeep",
-  applicationName: "Karakeep",
-  description:
-    "The Bookmark Everything app. Hoard links, notes, and images and they will get automatically tagged AI.",
+  title: "素材苗床 · Seedbed",
+  applicationName: "Seedbed",
+  description: "私人收藏整理与再发现工具 / A private inspiration library.",
   icons: {
     icon: [
       {
@@ -53,8 +53,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default async function RootLayout({
@@ -77,6 +75,9 @@ export default async function RootLayout({
             session={session}
             clientConfig={clientConfig}
             userLocalSettings={await getUserLocalSettings()}
+            translationResources={await getTranslationResources(
+              userSettings.lang,
+            )}
           >
             {children}
             <ReactQueryDevtools initialIsOpen={false} />

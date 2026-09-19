@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { authOptions } from "@/server/auth";
+import { useTranslation } from "@/lib/i18n/server";
 import { Info } from "lucide-react";
 
 import serverConfig from "@karakeep/shared/config";
@@ -16,6 +17,9 @@ import OAuthAutoRedirect from "./OAuthAutoRedirect";
 import SignInProviderButton from "./SignInProviderButton";
 
 export default async function SignInForm() {
+  // Server-side translation helper, not a React hook.
+  // oxlint-disable-next-line rules-of-hooks
+  const { t } = await useTranslation();
   const providers = authOptions.providers;
   let providerValues;
   if (providers) {
@@ -33,8 +37,10 @@ export default async function SignInForm() {
       )}
       <Card className="w-full">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <CardDescription>Sign in to your Karakeep account</CardDescription>
+          <CardTitle className="text-2xl font-bold">
+            {t("seedbed.welcome")}
+          </CardTitle>
+          <CardDescription>{t("seedbed.signin_description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {serverConfig.demoMode && (

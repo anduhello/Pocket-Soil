@@ -9,6 +9,7 @@ import { BookmarkTypes } from "../types/bookmarks";
 import { zExportSchema } from "./exporters";
 
 export type ImportSource =
+  | "links"
   | "html"
   | "pocket"
   | "matter"
@@ -663,7 +664,23 @@ function deduplicateBookmarks(bookmarks: ParsedBookmark[]): ParsedBookmark[] {
 export function parseImportFile(
   source: ImportSource,
   textContent: string,
+  options: { preserveDuplicates?: boolean } = {},
 ): ParsedImportFile {
+  if (source === "links") {
+    return {
+      lists: [],
+      bookmarks: textContent
+        .split(/\r\n|\n|\r/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((url) => ({
+          title: "",
+          content: { type: BookmarkTypes.LINK, url },
+          tags: [],
+          paths: [],
+        })),
+    };
+  }
   if (source === "karakeep") {
     const parsed = parseKarakeepBookmarkFile(textContent);
     return {
@@ -705,5 +722,12 @@ export function parseImportFile(
       result = parseOneTabFile(textContent);
       break;
   }
-  return { bookmarks: deduplicateBookmarks(result), lists: [] };
+  // Preserve raw HTML entries so preview can count in-file duplicates.
+  return {
+    bookmarks:
+      source === "html" && options.preserveDuplicates
+        ? result
+        : deduplicateBookmarks(result),
+    lists: [],
+  };
 }

@@ -24,6 +24,7 @@ import { useTRPC } from "@karakeep/shared-react/trpc";
 
 import ActionConfirmingDialog from "../ui/action-confirming-dialog";
 import AddUserDialog from "./AddUserDialog";
+import AdjustCoinsDialog from "./AdjustCoinsDialog";
 import { AdminCard } from "./AdminCard";
 import ResetPasswordDialog from "./ResetPasswordDialog";
 import UpdateUserDialog from "./UpdateUserDialog";
@@ -82,6 +83,7 @@ export default function UsersSection() {
               <TableHead>{t("common.email")}</TableHead>
               <TableHead>{t("admin.users_list.num_bookmarks")}</TableHead>
               <TableHead>{t("admin.users_list.asset_sizes")}</TableHead>
+              <TableHead>金币 / 免费AI</TableHead>
               <TableHead>{t("common.role")}</TableHead>
               <TableHead>{t("admin.users_list.local_user")}</TableHead>
               <TableHead>{t("common.actions")}</TableHead>
@@ -103,12 +105,23 @@ export default function UsersSection() {
                     : t("admin.users_list.unlimited")}
                 </TableCell>
                 <TableCell className="py-1">
+                  {userStats[u.id].coinBalance} /{" "}
+                  {userStats[u.id].unlimitedAiTagging
+                    ? "永久免费"
+                    : `${Math.max(0, 100 - userStats[u.id].freeAiTaggingsUsed) + userStats[u.id].bonusFreeAiTaggings} 次免费`}
+                </TableCell>
+                <TableCell className="py-1">
                   {u.role && t(`common.roles.${u.role}`)}
                 </TableCell>
                 <TableCell className="py-1">
                   {u.localUser ? <Check /> : <X />}
                 </TableCell>
                 <TableCell className="flex gap-1 py-1">
+                  <AdjustCoinsDialog
+                    userId={u.id}
+                    userName={u.name}
+                    currentUnlimited={userStats[u.id].unlimitedAiTagging}
+                  />
                   <ActionConfirmingDialog
                     title={t("admin.users_list.delete_user")}
                     description={t(

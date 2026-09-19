@@ -277,6 +277,13 @@ export const bookmarksAppRouter = router({
           ? { "bookmark.asset_type": input.assetType }
           : {}),
       });
+      const metadataOnly =
+        input.metadataOnly === true &&
+        input.source === "import" &&
+        input.type === BookmarkTypes.LINK &&
+        /^https:\/\/(?:www\.bilibili\.com\/video\/BV[A-Za-z0-9]{10}|github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)$/.test(
+          input.url.trim(),
+        );
       if (input.type == BookmarkTypes.LINK) {
         // Fast path; the immediate transaction below repeats this check while
         // holding SQLite's write reservation to close concurrent create races.
@@ -353,7 +360,10 @@ export const bookmarksAppRouter = router({
               source: input.source,
               // Only links currently support summarization. Let's set the status to null for other types for now.
               summarizationStatus:
-                input.type === BookmarkTypes.LINK ? "pending" : null,
+                input.type === BookmarkTypes.LINK && !metadataOnly
+                  ? "pending"
+                  : null,
+              ...(metadataOnly ? { taggingStatus: null } : {}),
             })
             .returning()
             .all()[0];
@@ -367,6 +377,7 @@ export const bookmarksAppRouter = router({
                 .values({
                   id: bookmark.id,
                   url: input.url.trim(),
+                  ...(metadataOnly ? { crawlStatus: null } : {}),
                 })
                 .returning()
                 .all()[0];
@@ -491,6 +502,7 @@ export const bookmarksAppRouter = router({
 
       switch (bookmark.content.type) {
         case BookmarkTypes.LINK: {
+          if (metadataOnly) break;
           // The crawling job triggers openai when it's done
           // Use a separate queue for low priority crawling to avoid impacting main queue parallelism
           const crawlerQueue = shouldUseLowPriority

@@ -21,6 +21,7 @@ import {
   Circle,
   CircleCheck,
   GripVertical,
+  ExternalLink,
   Image as ImageIcon,
   NotebookPen,
 } from "lucide-react";
@@ -64,18 +65,32 @@ function BottomRow({
   footer?: ReactNode;
   bookmark: ZBookmark;
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="justify flex w-full shrink-0 justify-between text-gray-500">
-      <div className="flex items-center gap-2 overflow-hidden text-nowrap font-light">
-        {footer && <>{footer}•</>}
-        <Link
-          href={`/dashboard/preview/${bookmark.id}`}
-          suppressHydrationWarning
-        >
-          <BookmarkFormattedCreatedAt createdAt={bookmark.createdAt} />
-        </Link>
+    <div className="flex w-full shrink-0 flex-col gap-2 text-sm text-muted-foreground">
+      <div className="flex w-full items-center justify-between gap-2">
+        <div className="flex items-center gap-2 overflow-hidden text-nowrap font-light">
+          {footer && <>{footer}•</>}
+          <Link
+            href={`/dashboard/preview/${bookmark.id}`}
+            suppressHydrationWarning
+          >
+            <BookmarkFormattedCreatedAt createdAt={bookmark.createdAt} />
+          </Link>
+        </div>
+        <BookmarkActionBar bookmark={bookmark} />
       </div>
-      <BookmarkActionBar bookmark={bookmark} />
+      {bookmark.content.type === BookmarkTypes.LINK ? (
+        <a
+          href={bookmark.content.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex min-h-8 items-center justify-end gap-2 rounded-md text-sm hover:text-primary"
+        >
+          <ExternalLink size={16} />
+          {t("seedbed.open_original")}
+        </a>
+      ) : null}
     </div>
   );
 }
@@ -323,6 +338,7 @@ function ListView({
     contain: "object-contain",
   });
   const note = showNotes ? bookmark.note?.trim() : undefined;
+  const img = image("list", cn("size-32 rounded-lg", imgFitClass));
 
   return (
     <div
@@ -339,9 +355,11 @@ function ListView({
         className="left-1 top-1/2 -translate-y-1/2"
       />
       <HoverActionBar bookmark={bookmark} />
-      <div className="flex size-32 items-center justify-center overflow-hidden">
-        {image("list", cn("size-32 rounded-lg", imgFitClass))}
-      </div>
+      {img && (
+        <div className="flex size-32 items-center justify-center overflow-hidden">
+          {img}
+        </div>
+      )}
       <div className="flex h-full flex-1 flex-col justify-between gap-2 overflow-hidden">
         <div className="flex flex-col gap-2 overflow-hidden">
           {showTitle && title && (
@@ -395,7 +413,11 @@ function GridView({
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-lg",
         className,
-        fitHeight && layout != "grid" ? "max-h-96" : "h-96",
+        !img
+          ? "min-h-64"
+          : fitHeight && layout != "grid"
+            ? "max-h-[430px]"
+            : "h-[430px]",
       )}
       data-bookmark-index={bookmarkIndex}
     >
@@ -404,7 +426,7 @@ function GridView({
       <DragHandle bookmark={bookmark} className="left-2 top-2" />
       <HoverActionBar bookmark={bookmark} />
       {img && <div className="h-56 w-full shrink-0 overflow-hidden">{img}</div>}
-      <div className="flex h-full flex-col justify-between gap-2 overflow-hidden p-2">
+      <div className="flex h-full flex-col justify-between gap-2 overflow-hidden p-4">
         <div className="grow-1 flex flex-col gap-2 overflow-hidden">
           {showTitle && title && (
             <div className="line-clamp-2 flex-none shrink-0 overflow-hidden text-ellipsis break-words text-lg">

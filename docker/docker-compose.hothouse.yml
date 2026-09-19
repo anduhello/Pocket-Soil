@@ -28,6 +28,9 @@ volumes:
   docs-modules:
 services:
   web:
+    env_file:
+      - path: ../.env.seedbed-ai.local
+        required: false
     volumes:
       - apps-browser-extension-modules:/app/apps/browser-extension/node_modules
       - apps-cli-modules:/app/apps/cli/node_modules

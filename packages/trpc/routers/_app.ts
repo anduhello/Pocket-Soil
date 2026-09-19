@@ -3,6 +3,7 @@ import { adminAppRouter } from "./admin";
 import { apiKeysAppRouter } from "./apiKeys";
 import { assetsAppRouter } from "./assets";
 import { backupsAppRouter } from "./backups";
+import { billingRouter } from "./billing";
 import { bookmarksAppRouter } from "./bookmarks";
 import { configAppRouter } from "./config";
 import { feedsAppRouter } from "./feeds";
@@ -28,6 +29,7 @@ export const appRouter = router({
   admin: adminAppRouter,
   feeds: feedsAppRouter,
   backups: backupsAppRouter,
+  billing: billingRouter,
   highlights: highlightsAppRouter,
   importSessions: importSessionsRouter,
   webhooks: webhooksAppRouter,

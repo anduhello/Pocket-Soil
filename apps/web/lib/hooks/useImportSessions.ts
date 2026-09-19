@@ -196,3 +196,27 @@ export function useImportSessionResults(
     ),
   );
 }
+
+export function useRetryFailedImportSession() {
+  const api = useTRPC();
+  const queryClient = useQueryClient();
+  return useMutation(
+    api.importSessions.retryFailedImportSession.mutationOptions({
+      onSuccess: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries(
+            api.importSessions.listImportSessions.pathFilter(),
+          ),
+          queryClient.invalidateQueries(
+            api.importSessions.getImportSessionStats.pathFilter(),
+          ),
+          queryClient.invalidateQueries(
+            api.importSessions.getImportSessionResults.pathFilter(),
+          ),
+        ]);
+      },
+      onError: (error) =>
+        toast({ description: error.message, variant: "destructive" }),
+    }),
+  );
+}

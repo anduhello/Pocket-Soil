@@ -186,6 +186,46 @@ export class ImportSessionsRepo {
     return archivedCount;
   }
 
+  async retryFailed(id: string): Promise<number> {
+    return this.db.transaction(
+      (tx) => {
+        const session = tx
+          .select()
+          .from(importSessions)
+          .where(eq(importSessions.id, id))
+          .get();
+        if (!session || !["completed", "failed"].includes(session.status)) {
+          throw new Error("Import session must be finished before retrying");
+        }
+        const result = tx
+          .update(importStagingBookmarks)
+          .set({
+            status: "pending",
+            result: null,
+            resultReason: null,
+            resultBookmarkId: null,
+            processingStartedAt: null,
+            completedAt: null,
+          })
+          .where(
+            and(
+              eq(importStagingBookmarks.importSessionId, id),
+              eq(importStagingBookmarks.status, "failed"),
+            ),
+          )
+          .run();
+        if (result.changes > 0) {
+          tx.update(importSessions)
+            .set({ status: "pending", completedAt: null, message: null })
+            .where(eq(importSessions.id, id))
+            .run();
+        }
+        return result.changes;
+      },
+      { behavior: "immediate" },
+    );
+  }
+
   async getStagingBookmarks(
     sessionId: string,
     filter?: "all" | "accepted" | "rejected" | "skipped_duplicate" | "pending",

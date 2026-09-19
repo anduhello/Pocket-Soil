@@ -58,7 +58,7 @@ export default async function Dashboard({
   const items = (t: TFunction) =>
     [
       {
-        name: t("common.home"),
+        name: t("seedbed.library"),
         icon: <Home size={18} />,
         path: "/dashboard/bookmarks",
       },

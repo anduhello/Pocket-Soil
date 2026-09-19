@@ -12,6 +12,7 @@ import {
   useImportSessionStats,
   usePauseImportSession,
   useResumeImportSession,
+  useRetryFailedImportSession,
 } from "@/lib/hooks/useImportSessions";
 import { useTranslation } from "@/lib/i18n/client";
 import { formatDistanceToNow } from "date-fns";
@@ -88,6 +89,7 @@ export function ImportSessionCard({ session }: ImportSessionCardProps) {
   const finalizeSession = useFinalizeImportStaging();
   const pauseSession = usePauseImportSession();
   const resumeSession = useResumeImportSession();
+  const retrySession = useRetryFailedImportSession();
 
   const statusLabels = (s: ZImportSessionStatus) =>
     switchCase(s, {
@@ -252,6 +254,23 @@ export function ImportSessionCard({ session }: ImportSessionCardProps) {
           {/* Actions */}
           <div className="flex items-center justify-end pt-2">
             <div className="flex items-center gap-2">
+              {["completed", "failed"].includes(stats.status) &&
+                stats.failedBookmarks > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={retrySession.isPending}
+                    onClick={() =>
+                      retrySession.mutate({ importSessionId: session.id })
+                    }
+                  >
+                    {retrySession.isPending
+                      ? t("seedbed.processing")
+                      : t("seedbed.retry_failed", {
+                          count: stats.failedBookmarks,
+                        })}
+                  </Button>
+                )}
               {stats.status !== "archived" && (
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/settings/import/${session.id}`}>

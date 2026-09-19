@@ -20,6 +20,11 @@ const initI18next = async (lng: string, ns: string | string[]) => {
   return i18nInstance;
 };
 
+export async function getTranslationResources(lang: string) {
+  const instance = await initI18next(lang, "translation");
+  return instance.services.resourceStore.data;
+}
+
 export async function useTranslation<
   Ns extends FlatNamespace,
   KPrefix extends KeyPrefix<FallbackNs<Ns>> = undefined,

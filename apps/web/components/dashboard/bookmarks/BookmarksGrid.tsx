@@ -27,6 +27,7 @@ import { useBookmarkListContext } from "@karakeep/shared-react/hooks/bookmark-li
 import BookmarkCard from "./BookmarkCard";
 import EditorCard from "./EditorCard";
 import UnknownCard from "./UnknownCard";
+import SeedbedTagReview from "./SeedbedTagReview";
 
 function StyledBookmarkCard({
   children,
@@ -39,7 +40,7 @@ function StyledBookmarkCard({
   return (
     <Slot
       className={cn(
-        "mb-4 border border-border bg-card hover:shadow-lg hover:transition-shadow",
+        "mb-4 border border-border bg-card transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm",
         className,
       )}
       {...props}
@@ -242,6 +243,7 @@ export default function BookmarksGrid({
   ];
   return (
     <>
+      <SeedbedTagReview bookmarks={bookmarks} />
       {bookmarkLayoutSwitch(layout, {
         masonry: (
           <Masonry

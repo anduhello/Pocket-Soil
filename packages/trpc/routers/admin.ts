@@ -8,6 +8,7 @@ import {
   bookmarkAssets,
   bookmarkLinks,
   bookmarks,
+  coinWallets,
   subscriptions,
   users,
 } from "@karakeep/db/schema";
@@ -44,6 +45,7 @@ import { getVectorStoreClient } from "@karakeep/shared/vectorStore";
 import { generatePasswordSalt, hashPassword } from "../auth";
 import { createAdminScopedProcedure, router } from "../index";
 import { Bookmark } from "../models/bookmarks";
+import { CoinBillingService, WELCOME_COIN_GRANT } from "../models/coinBilling";
 import { User } from "../models/users";
 import { syncStripeDataToDatabase } from "./subscriptions";
 
@@ -475,30 +477,47 @@ export const adminAppRouter = router({
         z.object({
           numBookmarks: z.number(),
           assetSizes: z.number(),
+          coinBalance: z.number(),
+          freeAiTaggingsUsed: z.number(),
+          bonusFreeAiTaggings: z.number(),
+          unlimitedAiTagging: z.boolean(),
         }),
       ),
     )
     .query(async ({ ctx }) => {
-      const [userIds, bookmarkStats, assetStats] = await Promise.all([
-        ctx.db.select({ id: users.id }).from(users),
-        ctx.db
-          .select({ id: bookmarks.userId, value: count() })
-          .from(bookmarks)
-          .groupBy(bookmarks.userId),
-        ctx.db
-          .select({ id: assets.userId, value: sum(assets.size) })
-          .from(assets)
-          .groupBy(assets.userId),
-      ]);
+      const [userIds, bookmarkStats, assetStats, walletStats] =
+        await Promise.all([
+          ctx.db.select({ id: users.id }).from(users),
+          ctx.db
+            .select({ id: bookmarks.userId, value: count() })
+            .from(bookmarks)
+            .groupBy(bookmarks.userId),
+          ctx.db
+            .select({ id: assets.userId, value: sum(assets.size) })
+            .from(assets)
+            .groupBy(assets.userId),
+          ctx.db.select().from(coinWallets),
+        ]);
 
       const results: Record<
         string,
-        { numBookmarks: number; assetSizes: number }
+        {
+          numBookmarks: number;
+          assetSizes: number;
+          coinBalance: number;
+          freeAiTaggingsUsed: number;
+          bonusFreeAiTaggings: number;
+          unlimitedAiTagging: boolean;
+        }
       > = {};
       for (const user of userIds) {
         results[user.id] = {
           numBookmarks: 0,
           assetSizes: 0,
+          coinBalance: WELCOME_COIN_GRANT,
+          freeAiTaggingsUsed: 0,
+          bonusFreeAiTaggings: 0,
+          unlimitedAiTagging: false,
         };
       }
       for (const stat of bookmarkStats) {
@@ -507,9 +526,50 @@ export const adminAppRouter = router({
       for (const stat of assetStats) {
         results[stat.id].assetSizes = parseInt(stat.value ?? "0");
       }
+      for (const wallet of walletStats) {
+        results[wallet.userId].coinBalance = wallet.balance;
+        results[wallet.userId].freeAiTaggingsUsed = wallet.freeAiTaggingsUsed;
+        results[wallet.userId].bonusFreeAiTaggings =
+          wallet.bonusFreeAiTaggings;
+        results[wallet.userId].unlimitedAiTagging =
+          wallet.unlimitedAiTagging;
+      }
 
       return results;
     }),
+  adjustUserCoins: adminUsersProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        amount: z.number().int().min(-100000).max(100000).refine(Boolean),
+        reason: z.string().trim().min(3).max(200),
+        idempotencyKey: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) =>
+      new CoinBillingService(ctx.db).adminAdjust(
+        input.userId,
+        input.amount,
+        input.reason,
+        ctx.user.id,
+        input.idempotencyKey,
+      ),
+    ),
+  adjustUserFreeAiQuota: adminUsersProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        amount: z.number().int().min(-100000).max(100000),
+        unlimitedAiTagging: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) =>
+      new CoinBillingService(ctx.db).adminAdjustFreeQuota(
+        input.userId,
+        input.amount,
+        input.unlimitedAiTagging,
+      ),
+    ),
   createUser: adminUsersProcedure
     .input(zAdminCreateUserSchema)
     .output(

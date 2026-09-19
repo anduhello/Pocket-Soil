@@ -153,6 +153,16 @@ export class ImportSessionsService {
     await this.repo.updateStatus(session.id, "pending");
   }
 
+  async retryFailed(session: Authorized<ImportSessionRow>): Promise<number> {
+    if (!["completed", "failed"].includes(session.status)) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Import session must be finished before retrying",
+      });
+    }
+    return await this.repo.retryFailed(session.id);
+  }
+
   /**
    * System-level operation that archives completed sessions across ALL users.
    * Intended for background workers only — must never be exposed through a

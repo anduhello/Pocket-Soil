@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { languages } from "@/lib/i18n/settings";
 
 import type { BookmarksLayoutTypes, UserLocalSettings } from "./types";
 import {
@@ -36,6 +37,8 @@ export async function updateBookmarksLayout(layout: BookmarksLayoutTypes) {
 }
 
 export async function updateInterfaceLang(lang: string) {
+  if (!languages.includes(lang))
+    throw new Error("Unsupported interface language");
   await readModifyWrite(() => ({ lang }));
 }
 
