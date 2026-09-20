@@ -1,34 +1,28 @@
 import type { Metadata } from "next";
-import Bookmarks from "@/components/dashboard/bookmarks/Bookmarks";
-import InfoTooltip from "@/components/ui/info-tooltip";
+import ArchiveLearningDashboard from "@/components/dashboard/archive/ArchiveLearningDashboard";
 import { useTranslation } from "@/lib/i18n/server";
+import { api } from "@/server/api/client";
 
 export async function generateMetadata(): Promise<Metadata> {
   // oxlint-disable-next-line rules-of-hooks
   const { t } = await useTranslation();
   return {
-    title: `${t("common.archive")} | Karakeep`,
+    title: `${t("common.archive")} | Little Soil`,
   };
 }
 
-function header() {
-  return (
-    <div className="flex gap-2">
-      <p className="text-2xl">🗄️ Archive</p>
-      <InfoTooltip size={17} className="my-auto" variant="explain">
-        <p>Archived bookmarks won&apos;t appear in the homepage</p>
-      </InfoTooltip>
-    </div>
-  );
-}
-
 export default async function ArchivedBookmarkPage() {
+  const [archived, active] = await Promise.all([
+    api.bookmarks.getBookmarks({ archived: true, limit: 100 }),
+    api.bookmarks.getBookmarks({ archived: false, limit: 100 }),
+  ]);
+
   return (
-    <Bookmarks
-      header={header()}
-      query={{ archived: true }}
-      showDivider={true}
-      showEditorCard={true}
+    <ArchiveLearningDashboard
+      initialBookmarks={archived.bookmarks}
+      activeCount={active.bookmarks.length}
+      activeHasMore={Boolean(active.nextCursor)}
+      archivedHasMore={Boolean(archived.nextCursor)}
     />
   );
 }

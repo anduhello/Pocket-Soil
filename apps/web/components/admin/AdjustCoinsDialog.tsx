@@ -39,7 +39,7 @@ export default function AdjustCoinsDialog({
     api.admin.adjustUserCoins.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries(api.admin.userStats.pathFilter());
-        toast({ description: "金币余额已调整" });
+        toast({ description: "AI 点数余额已调整" });
         setAmount("");
         setReason("");
         setOpen(false);
@@ -73,15 +73,15 @@ export default function AdjustCoinsDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" title="调整金币">
+        <Button variant="outline" size="icon" title="调整 AI 点数">
           <Coins className="size-4 text-amber-600" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>调整 {userName} 的金币</DialogTitle>
+          <DialogTitle>调整 {userName} 的 AI 点数</DialogTitle>
           <DialogDescription>
-            可以发放金币、额外免费次数，或把内部账号设为永久免费。
+            可以发放 AI 点数、额外免费次数，或把内部账号设为永久免费。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
@@ -113,7 +113,7 @@ export default function AdjustCoinsDialog({
                 onChange={(event) => setUnlimited(event.target.checked)}
                 className="size-4"
               />
-              永久免费（AI 标签不扣金币，也不受次数限制）
+              永久免费（AI 标签不扣 AI 点数，也不受次数限制）
             </label>
           </div>
           <div className="grid gap-2">

@@ -184,7 +184,7 @@ function ExportButton() {
 }
 
 export function ImportExportRow() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [pastedLinks, setPastedLinks] = useState("");
   const [lastImportId, setLastImportId] = useState<string | null>(null);
   const [favoriteUrl, setFavoriteUrl] = useState("");
@@ -267,6 +267,7 @@ export function ImportExportRow() {
               const suggestions = await tagSuggestions.mutateAsync({
                 billingMode: "initial_import",
                 billingRequestId: crypto.randomUUID(),
+                uiLanguage: i18n.language.startsWith("zh") ? "zh" : "en",
                 videos: candidates.slice(offset, offset + 50),
               });
               const tagsByUrl = new Map(

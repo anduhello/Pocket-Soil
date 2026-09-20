@@ -15,13 +15,10 @@ import {
   CreditCard,
   Download,
   GitBranch,
-  Image,
-  KeyRound,
-  Link,
+  Puzzle,
   Rss,
   Sparkles,
   User,
-  Webhook,
 } from "lucide-react";
 
 import serverConfig from "@karakeep/shared/config";
@@ -84,29 +81,14 @@ const settingsSidebarItems = (
       path: "/settings/import",
     },
     {
-      name: t("settings.api_keys.api_keys"),
-      icon: <KeyRound size={18} />,
-      path: "/settings/api-keys",
-    },
-    {
-      name: t("settings.broken_links.broken_links"),
-      icon: <Link size={18} />,
-      path: "/settings/broken-links",
-    },
-    {
-      name: t("settings.webhooks.webhooks"),
-      icon: <Webhook size={18} />,
-      path: "/settings/webhooks",
+      name: t("options.apps_extensions"),
+      icon: <Puzzle size={18} />,
+      path: "/settings/apps",
     },
     {
       name: t("settings.rules.rules"),
       icon: <GitBranch size={18} />,
       path: "/settings/rules",
-    },
-    {
-      name: t("settings.manage_assets.manage_assets"),
-      icon: <Image size={18} />,
-      path: "/settings/assets",
     },
   ];
 };

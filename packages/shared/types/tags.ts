@@ -25,6 +25,7 @@ export type ZBookmarkTags = z.infer<typeof zBookmarkTagSchema>;
 export const zGetTagResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().nullable(),
   numBookmarks: z.number(),
   numBookmarksByAttachedType: z.record(zAttachedByEnumSchema, z.number()),
 });
@@ -33,11 +34,13 @@ export type ZGetTagResponse = z.infer<typeof zGetTagResponseSchema>;
 export const zUpdateTagRequestSchema = z.object({
   tagId: z.string(),
   name: zTagNameSchemaWithValidation.optional(),
+  description: z.string().trim().max(500).nullable().optional(),
 });
 
 export const zTagBasicSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().nullable(),
 });
 export type ZTagBasic = z.infer<typeof zTagBasicSchema>;
 

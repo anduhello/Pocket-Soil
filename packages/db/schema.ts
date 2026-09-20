@@ -544,6 +544,7 @@ export const bookmarkTags = sqliteTable(
       .primaryKey()
       .$defaultFn(() => createId()),
     name: text("name").notNull(),
+    description: text("description"),
     normalizedName: text("normalizedName").generatedAlwaysAs(
       (): SQL =>
         // This function needs to be in sync with the tagNormalizer function in tagging.ts

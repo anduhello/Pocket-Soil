@@ -50,7 +50,7 @@ describe("Seedbed optional AI suggestions", () => {
   it("does not call providers without a key", async () => {
     const fetcher = vi.fn<typeof fetch>();
     await expect(suggestSeedbedTags(input, fetcher, {})).rejects.toThrow(
-      "尚未配置",
+      "AI 标签服务暂不可用",
     );
     expect(fetcher).not.toHaveBeenCalled();
   });

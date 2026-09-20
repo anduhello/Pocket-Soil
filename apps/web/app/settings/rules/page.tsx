@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { FullPageSpinner } from "@/components/ui/full-page-spinner";
 import { useTranslation } from "@/lib/i18n/client";
 import { useQuery } from "@tanstack/react-query";
-import { PlusCircle } from "lucide-react";
+import { FolderInput, PlusCircle, Sparkles, Tags } from "lucide-react";
 
 import { useTRPC } from "@karakeep/shared-react/trpc";
 import { RuleEngineRule } from "@karakeep/shared/types/rules";
@@ -33,8 +33,8 @@ export default function RulesSettingsPage() {
   const handleCreateRule = () => {
     const newRule = {
       id: null,
-      name: "New Rule",
-      description: "Description of the new rule",
+      name: t("settings.rules.new_rule_name"),
+      description: t("settings.rules.new_rule_description"),
       enabled: true,
       event: { type: "bookmarkAdded" as const },
       condition: { type: "alwaysTrue" as const },
@@ -61,6 +61,62 @@ export default function RulesSettingsPage() {
         </Button>
       }
     >
+      <div className="rounded-2xl border bg-secondary/50 p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <Sparkles className="size-5" />
+          </div>
+          <div>
+            <h2 className="font-semibold">{t("settings.rules.guide_title")}</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {t("settings.rules.guide_description")}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {[
+            {
+              icon: Sparkles,
+              title: "guide_trigger_title",
+              body: "guide_trigger_body",
+            },
+            {
+              icon: Tags,
+              title: "guide_condition_title",
+              body: "guide_condition_body",
+            },
+            {
+              icon: FolderInput,
+              title: "guide_action_title",
+              body: "guide_action_body",
+            },
+          ].map((item, index) => (
+            <div
+              key={item.title}
+              className="rounded-xl border bg-background/80 p-4 transition-transform duration-200 hover:-rotate-1 hover:shadow-sm"
+            >
+              <div className="mb-2 flex items-center gap-2 text-primary">
+                <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {index + 1}
+                </span>
+                <item.icon className="size-4" />
+              </div>
+              <p className="text-sm font-semibold">
+                {t(`settings.rules.${item.title}`)}
+              </p>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                {t(`settings.rules.${item.body}`)}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 rounded-lg bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">
+          <strong className="text-foreground">
+            {t("settings.rules.example_title")}
+          </strong>{" "}
+          {t("settings.rules.example_body")}
+        </p>
+      </div>
       <SettingsSection>
         {!rules || isLoading ? (
           <FullPageSpinner />

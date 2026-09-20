@@ -50,7 +50,7 @@ export default function SeedbedTagReview({
 }: {
   bookmarks: ZBookmark[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: session } = useSession();
   const api = useTRPC();
   const ai = useMutation(
@@ -137,6 +137,7 @@ export default function SeedbedTagReview({
       const result = await ai.mutateAsync({
         billingMode: "rematch",
         billingRequestId: crypto.randomUUID(),
+        uiLanguage: i18n.language.startsWith("zh") ? "zh" : "en",
         videos: [
           {
             url: current.content.url,

@@ -38,7 +38,7 @@ export default function SidebarItem({
   return (
     <li
       className={cn(
-        "relative flex justify-between rounded-lg text-sm transition-colors hover:bg-accent",
+        "relative flex justify-between rounded-lg text-sm transition duration-150 hover:-rotate-[0.35deg] hover:bg-accent hover:shadow-sm",
         path == currentPath
           ? "bg-accent font-medium text-accent-foreground"
           : "text-muted-foreground",

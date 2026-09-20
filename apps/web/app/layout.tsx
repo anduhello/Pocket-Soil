@@ -21,29 +21,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "素材苗床 · Seedbed",
-  applicationName: "Seedbed",
-  description: "私人收藏整理与再发现工具 / A private inspiration library.",
+  title: "小土壤 · Little Soil",
+  applicationName: "Little Soil",
+  description: "把收藏养成灵感的私人素材库 / A private inspiration library.",
   icons: {
-    icon: [
-      {
-        url: "/icons/logo-icon.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icons/logo-icon-dark.svg",
-        type: "image/svg+xml",
-        sizes: "any",
-        media: "(prefers-color-scheme: dark)",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/seedbed/little-soil-mark.png",
+    apple: "/seedbed/little-soil-mark.png",
   },
   appleWebApp: {
     capable: true,
-    title: "Karakeep",
+    title: "小土壤",
   },
   formatDetection: {
     telephone: false,

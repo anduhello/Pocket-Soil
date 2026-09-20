@@ -7,15 +7,15 @@ import { defaultBeforeEach } from "../testUtils";
 beforeEach<CustomTestContext>(defaultBeforeEach(true));
 
 describe("CoinBillingService", () => {
-  test<CustomTestContext>("creates a wallet with welcome coins and free quota", async ({
+  test<CustomTestContext>("creates a wallet with 100 welcome points and free quota", async ({
     db,
     apiCallers,
   }) => {
     const user = await apiCallers[0].users.whoami();
     const summary = await new CoinBillingService(db).summary(user.id);
-    expect(summary.balance).toBe(20);
+    expect(summary.balance).toBe(100);
     expect(summary.freeRemaining).toBe(100);
-    expect(summary.transactions[0].amount).toBe(20);
+    expect(summary.transactions[0].amount).toBe(100);
   });
 
   test<CustomTestContext>("uses free imports before coins and does not double charge", async ({
@@ -37,7 +37,7 @@ describe("CoinBillingService", () => {
     expect(paid.coinCost).toBe(2);
     const same = await billing.reserve(user.id, "initial_import", 2, "paid-2");
     expect(same.id).toBe(paid.id);
-    expect((await billing.summary(user.id)).balance).toBe(18);
+    expect((await billing.summary(user.id)).balance).toBe(98);
   });
 
   test<CustomTestContext>("charges rematches and refunds failed work", async ({
@@ -52,10 +52,10 @@ describe("CoinBillingService", () => {
       1,
       "rematch-1",
     );
-    expect((await billing.summary(user.id)).balance).toBe(19);
+    expect((await billing.summary(user.id)).balance).toBe(99);
     await billing.refund(reservation.id, "provider failed");
     const summary = await billing.summary(user.id);
-    expect(summary.balance).toBe(20);
+    expect(summary.balance).toBe(100);
     expect(summary.freeRemaining).toBe(100);
   });
 
@@ -74,7 +74,7 @@ describe("CoinBillingService", () => {
       "admin-grant-1",
     );
     const summary = await billing.summary(user.id);
-    expect(summary.balance).toBe(25);
+    expect(summary.balance).toBe(105);
     expect(summary.transactions[0].kind).toBe("admin_adjustment");
   });
 });
