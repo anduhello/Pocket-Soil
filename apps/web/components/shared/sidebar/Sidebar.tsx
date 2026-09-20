@@ -1,12 +1,10 @@
 import { useTranslation } from "@/lib/i18n/server";
 import { TFunction } from "i18next";
 
-import serverConfig from "@karakeep/shared/config";
-
 import SidebarItem from "./SidebarItem";
-import SidebarVersion from "./SidebarVersion";
+import SeedlingHedgehogPet from "./SeedlingHedgehogPet";
 import Link from "next/link";
-import { Import } from "lucide-react";
+import { Import, Sprout } from "lucide-react";
 import { TSidebarItem } from "./TSidebarItem";
 
 export default async function Sidebar({
@@ -20,7 +18,7 @@ export default async function Sidebar({
   const { t } = await useTranslation();
 
   return (
-    <aside className="flex h-[calc(100dvh-64px)] w-[220px] flex-col gap-5 border-r p-4">
+    <aside className="relative flex h-[calc(100dvh-64px)] w-[220px] flex-col gap-5 border-r p-4">
       <div>
         <ul className="flex flex-col gap-2 text-sm">
           {items(t).map((item) => (
@@ -33,18 +31,20 @@ export default async function Sidebar({
           ))}
         </ul>
       </div>
-      {extraSections}
       <Link
         href="/settings/import"
-        className="mt-auto flex items-center gap-3 rounded-lg border-t px-3 py-4 text-sm hover:bg-accent"
+        className="group flex items-center gap-2 rounded-2xl border border-primary/20 bg-primary px-3 py-3 text-base font-semibold text-primary-foreground shadow-md transition duration-200 hover:-rotate-[0.6deg] hover:bg-primary/90 hover:shadow-lg active:scale-[0.98]"
       >
-        <Import size={18} />
-        {t("seedbed.import_export")}
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 text-primary-foreground transition-transform duration-200 group-hover:-rotate-6 group-hover:scale-110">
+          <Sprout size={23} aria-hidden="true" />
+        </span>
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          <Import size={20} className="shrink-0" />
+          <span>{t("seedbed.import_export")}</span>
+        </span>
       </Link>
-      <SidebarVersion
-        serverVersion={serverConfig.serverVersion}
-        changeLogVersion={serverConfig.changelogVersion}
-      />
+      {extraSections}
+      <SeedlingHedgehogPet />
     </aside>
   );
 }

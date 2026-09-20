@@ -31,6 +31,8 @@ import {
   Trash2,
   XCircle,
   Rss,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -480,16 +482,55 @@ export default function FeedSettings() {
       description={t("settings.feeds.description")}
       action={<FeedsEditorDialog />}
     >
-      <div className="flex items-start gap-3 rounded-xl border bg-secondary/60 p-4">
-        <div className="rounded-full bg-primary/10 p-2 text-primary">
-          <Rss className="size-5" />
+      <div className="space-y-4 rounded-2xl border bg-secondary/50 p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <Rss className="size-5" />
+          </div>
+          <div>
+            <p className="font-semibold">{t("settings.feeds.help_title")}</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {t("settings.feeds.help_description")}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="font-semibold">{t("settings.feeds.help_title")}</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {t("settings.feeds.help_description")}
-          </p>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { icon: Search, title: "step_find_title", body: "step_find_body" },
+            { icon: Plus, title: "step_add_title", body: "step_add_body" },
+            {
+              icon: Sparkles,
+              title: "step_collect_title",
+              body: "step_collect_body",
+            },
+          ].map((step, index) => (
+            <div
+              key={step.title}
+              className="rounded-xl border bg-background/80 p-4 transition-transform duration-200 hover:-rotate-1 hover:shadow-sm"
+            >
+              <div className="mb-3 flex items-center gap-2 text-primary">
+                <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {index + 1}
+                </span>
+                <step.icon className="size-4" />
+              </div>
+              <p className="text-sm font-semibold">
+                {t(`settings.feeds.${step.title}`)}
+              </p>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                {t(`settings.feeds.${step.body}`)}
+              </p>
+            </div>
+          ))}
         </div>
+
+        <p className="rounded-lg bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">
+          <strong className="text-foreground">
+            {t("settings.feeds.example_title")}
+          </strong>{" "}
+          {t("settings.feeds.example_body")}
+        </p>
       </div>
       <SettingsSection>
         {isLoading && <FullPageSpinner />}

@@ -55,6 +55,7 @@ interface Props {
   className?: string;
   fitHeight?: boolean;
   wrapTags: boolean;
+  tagPriority?: "normal" | "prominent";
   bookmarkIndex?: number;
 }
 
@@ -330,6 +331,7 @@ function ListView({
   footer,
   className,
   bookmarkIndex,
+  tagPriority = "normal",
 }: Props) {
   const { showNotes, showTags, showTitle, imageFit } =
     useBookmarkDisplaySettings();
@@ -367,9 +369,18 @@ function ListView({
               {title}
             </div>
           )}
+          {tagPriority === "prominent" && showTags && (
+            <div className="flex shrink-0 flex-wrap gap-2 overflow-hidden">
+              <TagList
+                bookmark={bookmark}
+                loading={isBookmarkStillTagging(bookmark)}
+                emphasis="prominent"
+              />
+            </div>
+          )}
           {content && <div className="shrink-1 overflow-hidden">{content}</div>}
           {note && <NotePreview note={note} bookmarkId={bookmark.id} />}
-          {showTags && (
+          {showTags && tagPriority !== "prominent" && (
             <div className="flex shrink-0 flex-wrap gap-1 overflow-hidden">
               <TagList
                 bookmark={bookmark}
@@ -395,6 +406,7 @@ function GridView({
   layout,
   fitHeight = false,
   bookmarkIndex,
+  tagPriority = "normal",
 }: Props & { layout: BookmarksLayoutTypes }) {
   const { showNotes, showTags, showTitle, imageFit } =
     useBookmarkDisplaySettings();
@@ -429,13 +441,28 @@ function GridView({
       <div className="flex h-full flex-col justify-between gap-2 overflow-hidden p-4">
         <div className="grow-1 flex flex-col gap-2 overflow-hidden">
           {showTitle && title && (
-            <div className="line-clamp-2 flex-none shrink-0 overflow-hidden text-ellipsis break-words text-lg">
+            <div
+              className={cn(
+                "line-clamp-2 flex-none shrink-0 overflow-hidden text-ellipsis break-words text-lg",
+                tagPriority === "prominent" &&
+                  "text-xl font-semibold leading-snug",
+              )}
+            >
               {title}
+            </div>
+          )}
+          {tagPriority === "prominent" && showTags && (
+            <div className="flex shrink-0 flex-wrap gap-2 overflow-hidden">
+              <TagList
+                bookmark={bookmark}
+                loading={isBookmarkStillTagging(bookmark)}
+                emphasis="prominent"
+              />
             </div>
           )}
           {content && <div className="shrink-1 overflow-hidden">{content}</div>}
           {note && <NotePreview note={note} bookmarkId={bookmark.id} />}
-          {showTags && (
+          {showTags && tagPriority !== "prominent" && (
             <div className="flex shrink-0 flex-wrap gap-1 overflow-hidden">
               <TagList
                 className={wrapTags ? undefined : "h-full"}

@@ -101,11 +101,15 @@ export const importSessionsRouter = router({
           fetch,
           process.env,
           library.tags.map((tag) => tag.name),
+          input.uiLanguage,
         );
         await billing.settle(reservation.id);
         return result;
       } catch (error) {
-        await billing.refund(reservation.id, "AI 标签匹配失败，自动退回金币");
+        await billing.refund(
+          reservation.id,
+          "AI 标签匹配失败，自动退回 AI 点数",
+        );
         throw error;
       }
     }),

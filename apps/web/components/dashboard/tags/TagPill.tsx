@@ -79,7 +79,7 @@ export const TagPill = React.memo(function TagPill({
     >
       <Link
         className={
-          "flex gap-2 rounded-md border border-border bg-background px-2 py-1 text-foreground hover:bg-foreground hover:text-background"
+          "flex gap-2 rounded-md border border-border bg-background px-2 py-1 text-foreground shadow-sm transition duration-150 hover:-rotate-1 hover:scale-[1.03] hover:border-primary/40 hover:bg-secondary active:scale-[0.98]"
         }
         href={`/dashboard/tags/${id}`}
         data-id={id}

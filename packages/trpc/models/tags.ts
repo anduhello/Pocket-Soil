@@ -108,6 +108,7 @@ export class Tag {
       .select({
         id: bookmarkTags.id,
         name: bookmarkTags.name,
+        description: bookmarkTags.description,
         countAttachedByAi: countAi.as("countAttachedByAi"),
         countAttachedByHuman: countHuman.as("countAttachedByHuman"),
         count: countAny.as("count"),
@@ -171,6 +172,7 @@ export class Tag {
       tags: tags.map((t) => ({
         id: t.id,
         name: t.name,
+        description: t.description,
         numBookmarks: t.count,
         numBookmarksByAttachedType: {
           ai: t.countAttachedByAi,
@@ -338,7 +340,10 @@ export class Tag {
       const result = await this.ctx.db
         .update(bookmarkTags)
         .set({
-          name: input.name,
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.description !== undefined
+            ? { description: input.description }
+            : {}),
         })
         .where(
           and(
@@ -432,6 +437,7 @@ export class Tag {
     return {
       id: res[0].id,
       name: res[0].name,
+      description: this.tag.description,
       ...Tag._aggregateStats(res),
     };
   }
@@ -440,6 +446,7 @@ export class Tag {
     return {
       id: this.tag.id,
       name: this.tag.name,
+      description: this.tag.description,
     };
   }
 }

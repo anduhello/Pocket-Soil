@@ -15,7 +15,6 @@ import {
   CreditCard,
   Download,
   GitBranch,
-  Link,
   Puzzle,
   Rss,
   Sparkles,
@@ -85,11 +84,6 @@ const settingsSidebarItems = (
       name: t("options.apps_extensions"),
       icon: <Puzzle size={18} />,
       path: "/settings/apps",
-    },
-    {
-      name: t("settings.broken_links.broken_links"),
-      icon: <Link size={18} />,
-      path: "/settings/broken-links",
     },
     {
       name: t("settings.rules.rules"),

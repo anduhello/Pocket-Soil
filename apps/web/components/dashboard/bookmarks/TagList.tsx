@@ -10,10 +10,12 @@ export default function TagList({
   bookmark,
   loading,
   className,
+  emphasis = "normal",
 }: {
   bookmark: ZBookmark;
   loading?: boolean;
   className?: string;
+  emphasis?: "normal" | "prominent";
 }) {
   const { data: session } = useSession();
   const isOwner = session?.user?.id === bookmark.userId;
@@ -36,6 +38,8 @@ export default function TagList({
               className={cn(
                 badgeVariants({ variant: "secondary" }),
                 "text-nowrap font-light text-gray-700 hover:bg-foreground hover:text-secondary dark:text-gray-400",
+                emphasis === "prominent" &&
+                  "border border-primary/25 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary shadow-sm transition-transform duration-200 hover:-rotate-[1deg]",
               )}
               href={`/dashboard/tags/${t.id}`}
             >
@@ -47,6 +51,8 @@ export default function TagList({
               className={cn(
                 badgeVariants({ variant: "secondary" }),
                 "text-nowrap font-light text-gray-700 dark:text-gray-400",
+                emphasis === "prominent" &&
+                  "border border-primary/25 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary",
               )}
             >
               {t.name}

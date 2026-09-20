@@ -15,6 +15,7 @@ import { useTranslation } from "@/lib/i18n/client";
 import { Plus, Upload } from "lucide-react";
 import { useHotkeys } from "react-hotkeys-hook";
 import EditorCard from "./EditorCard";
+import DailyTagRecommendation from "./DailyTagRecommendation";
 
 export default function LibraryHeader() {
   const { t } = useTranslation();
@@ -42,7 +43,8 @@ export default function LibraryHeader() {
           </Button>
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <DailyTagRecommendation />
         <GlobalActions />
       </div>
       <Dialog open={open} onOpenChange={setOpen}>

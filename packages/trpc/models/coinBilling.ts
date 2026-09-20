@@ -8,7 +8,7 @@ import {
   coinWallets,
 } from "@karakeep/db/schema";
 
-export const WELCOME_COIN_GRANT = 20;
+export const WELCOME_COIN_GRANT = 100;
 export const FREE_INITIAL_AI_TAGGINGS = 100;
 export const AI_TAGGING_COIN_COST = 1;
 
@@ -30,7 +30,7 @@ function ensureWallet(db: Database, userId: string) {
         amount: WELCOME_COIN_GRANT,
         balanceAfter: WELCOME_COIN_GRANT,
         kind: "welcome_grant",
-        description: "新用户欢迎金币",
+        description: "新用户欢迎 AI 点数",
         idempotencyKey: `welcome:${userId}`,
       })
       .run();
@@ -43,6 +43,39 @@ function ensureWallet(db: Database, userId: string) {
     .where(eq(coinWallets.userId, userId))
     .get();
   if (!wallet) throw new Error("Coin wallet could not be initialized");
+
+  // Early testers received 20 points. Give the same 100-point welcome
+  // experience once, without rewriting their original account history.
+  const upgradeKey = `welcome-upgrade:${userId}`;
+  const originalWelcome = db
+    .select({ amount: coinTransactions.amount })
+    .from(coinTransactions)
+    .where(eq(coinTransactions.idempotencyKey, `welcome:${userId}`))
+    .get();
+  const alreadyUpgraded = db
+    .select({ id: coinTransactions.id })
+    .from(coinTransactions)
+    .where(eq(coinTransactions.idempotencyKey, upgradeKey))
+    .get();
+  if (originalWelcome?.amount === 20 && !alreadyUpgraded) {
+    const [upgradedWallet] = db
+      .update(coinWallets)
+      .set({ balance: sql`${coinWallets.balance} + 80` })
+      .where(eq(coinWallets.userId, userId))
+      .returning()
+      .all();
+    db.insert(coinTransactions)
+      .values({
+        userId,
+        amount: 80,
+        balanceAfter: upgradedWallet.balance,
+        kind: "welcome_grant",
+        description: "初始体验 AI 点数升级补发",
+        idempotencyKey: upgradeKey,
+      })
+      .run();
+    return upgradedWallet;
+  }
   return wallet;
 }
 
@@ -154,7 +187,7 @@ export class CoinBillingService {
       if (!quote.canAfford) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: `金币不足：本次需要 ${quote.coinCost} 金币，当前余额 ${quote.balance}。`,
+          message: `AI 点数不足：本次需要 ${quote.coinCost} 点，当前余额 ${quote.balance} 点。`,
         });
       }
 

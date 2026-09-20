@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 import HeaderActions from "./HeaderActions";
 import ProfileOptions from "@/components/dashboard/header/ProfileOptions";
+import WalletPill from "@/components/dashboard/header/WalletPill";
 import { SearchInput } from "@/components/dashboard/search/SearchInput";
 import KarakeepLogo from "@/components/KarakeepIcon";
 import { getServerAuthSession } from "@/server/auth";
@@ -24,6 +25,7 @@ export default async function Header() {
         <SearchInput className="rounded-md bg-card" />
         <HeaderActions />
       </div>
+      <WalletPill />
       <LanguageSwitcher />
       <div className="flex shrink-0 items-center">
         <ProfileOptions />

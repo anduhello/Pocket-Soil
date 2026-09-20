@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { TagOptions } from "@/components/dashboard/tags/TagOptions";
+import EditableTagDescription from "@/components/dashboard/tags/EditableTagDescription";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n/client";
 import { useQuery } from "@tanstack/react-query";
@@ -60,6 +61,7 @@ export default function TagHeader({
               </>
             )}
           </div>
+          <EditableTagDescription tag={tag} />
         </div>
       </div>
       <div className="flex shrink-0 items-center">

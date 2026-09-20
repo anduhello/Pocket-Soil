@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUserSettings } from "@/lib/userSettings";
 import { useTranslation } from "@/lib/i18n/client";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileWarning, FileText } from "lucide-react";
 
@@ -71,7 +72,11 @@ function LinkImage({
   const imgComponent = (url: string, unoptimized: boolean) => (
     <Image
       unoptimized={unoptimized}
-      className={className}
+      className={
+        isTextOnlyImportedSource(bookmarkLink.content.url)
+          ? cn("border-primary/20 bg-[#f2f5e9] shadow-sm", className)
+          : className
+      }
       alt="card banner"
       fill={true}
       src={url}
@@ -154,6 +159,11 @@ export default function LinkCard({
         ) : undefined
       }
       className={className}
+      tagPriority={
+        isTextOnlyImportedSource(bookmarkLink.content.url)
+          ? "prominent"
+          : "normal"
+      }
       bookmarkIndex={bookmarkIndex}
     />
   );
